@@ -23,6 +23,7 @@ from .types import (
     ResponseMetadata, TurnMetadata
 )
 from .openrouter_client import OpenRouterClient
+from .conversational_intelligence import ConversationalIntelligence, ConversationalConfig
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +172,7 @@ class AIConversationService:
         self.config = config
         self.openrouter_client = OpenRouterClient(config)
         self.conversation_manager = ConversationManager(config)
+        self.conversational_intelligence = ConversationalIntelligence(ConversationalConfig())
         self.statistics = AIStatistics()
         
         # Processing queue and worker thread
@@ -321,7 +323,13 @@ class AIConversationService:
             context_messages = self.conversation_manager.get_context_messages()
             
             # Generate AI response
-            response_text = self.openrouter_client.generate_response(context_messages, stream=False)
+            raw_response = self.openrouter_client.generate_response(context_messages, stream=False)
+            
+            # Apply conversational intelligence optimization
+            conversation_context = {
+                'recent_turns': [turn.to_dict() for turn in self.conversation_manager.get_recent_turns(3)]
+            }
+            response_text = self.conversational_intelligence.optimize_response(raw_response, conversation_context)
             
             processing_time = time.time() - start_time
             
@@ -481,9 +489,15 @@ class AIConversationService:
             # Update conversation state
             self.conversation_manager.update_conversation_state(ConversationState.IDLE)
             
+            # Apply conversational intelligence optimization to final response
+            conversation_context = {
+                'recent_turns': [turn.to_dict() for turn in self.conversation_manager.get_recent_turns(3)]
+            }
+            optimized_response = self.conversational_intelligence.optimize_response(full_response, conversation_context)
+            
             # Publish final response event
             self.event_bus.publish(AIEventTypes.AI_RESPONSE_READY, {
-                'text': full_response,
+                'text': optimized_response,
                 'model_used': self.openrouter_client.current_model,
                 'processing_time': processing_time,
                 'token_count': len(full_response) // 4,

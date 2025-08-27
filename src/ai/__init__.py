@@ -8,6 +8,10 @@ for natural language processing and conversation management.
 # AI Conversation Service
 from .openrouter_client import OpenRouterClient
 from .conversation_service import AIConversationService, ConversationManager
+from .conversational_intelligence import (
+    ConversationalIntelligence, ConversationalConfig, 
+    ResponseStyle, PersonalityTrait
+)
 
 # Data structures and types
 from .types import (
@@ -22,6 +26,12 @@ __all__ = [
     'OpenRouterClient',
     'AIConversationService',
     'ConversationManager',
+    
+    # Conversational Intelligence
+    'ConversationalIntelligence',
+    'ConversationalConfig',
+    'ResponseStyle',
+    'PersonalityTrait',
     
     # Data Types
     'ConversationRequest',
