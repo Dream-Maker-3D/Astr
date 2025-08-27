@@ -14,7 +14,7 @@ This voice AI assistant is built using **SOLID principles**, **GoF design patter
 ### 2. Strategy Pattern (Service Providers)
 - **Implementation**: Pluggable STT, TTS, and LLM services
 - **Purpose**: Easy switching between different AI providers
-- **Benefits**: Can swap OpenAI ↔ Google ↔ Azure services without code changes
+- **Benefits**: Can swap OpenRouter models (Claude, GPT, Llama) without code changes
 
 ### 3. State Pattern (State Management)
 - **Implementation**: `StateManager.js` with defined state transitions
@@ -94,7 +94,7 @@ This voice AI assistant is built using **SOLID principles**, **GoF design patter
 1. **Audio Input**: Microphone → AudioCapture → AUDIO_DATA_RECEIVED event
 2. **Voice Detection**: VoiceActivityDetector → SPEECH_DETECTED event
 3. **Transcription**: SpeechToTextService → TRANSCRIPTION_COMPLETE event
-4. **AI Processing**: LLMService → LLM_RESPONSE_CHUNK events
+4. **AI Processing**: OpenRouterService → AI_RESPONSE_CHUNK events
 5. **Speech Synthesis**: TextToSpeechService → TTS_AUDIO_CHUNK events
 6. **Audio Output**: AudioPlayer → PLAYBACK_FINISHED event
 

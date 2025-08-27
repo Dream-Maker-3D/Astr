@@ -1,177 +1,254 @@
-# Voice Assistant Development Roadmap
+# UNDONE - Voice Assistant Development Roadmap
 
-## Project Overview
-Build a real-time voice assistant using Python, Coqui STT/TTS, and Claude AI with proper GoF design patterns and behavior-driven development.
+## Project Status: 🚀 **STARTING FRESH**
 
-## Phase 1: Foundation and Research ✅
-- [x] Clean up old failed JavaScript implementation
-- [x] Create `.ai` directory for planning documentation
-- [x] Design UML system architecture diagrams
-- [x] Write comprehensive Gherkin BDD scenarios
-- [x] Create project roadmap (this document)
-- [ ] Research and document Coqui STT/TTS requirements
-- [ ] Document GoF design patterns to be implemented
-- [ ] Create detailed technical specifications
-
-## Phase 2: Core Architecture Design
-- [ ] Define abstract base classes and interfaces
-- [ ] Implement Facade pattern for VoiceAssistantFacade
-- [ ] Implement Observer pattern for EventBusService  
-- [ ] Implement Strategy pattern for audio processing
-- [ ] Implement Factory pattern for service creation
-- [ ] Implement Singleton pattern for ConfigurationManager
-- [ ] Create dependency injection container
-- [ ] Design error handling and logging framework
-
-## Phase 3: Audio Capture and Processing
-- [ ] Install and configure Python audio dependencies (pyaudio, sounddevice)
-- [ ] Implement AudioCaptureService with microphone configuration
-- [ ] Implement AudioBuffer with circular buffer pattern
-- [ ] Implement AudioPreprocessor for noise reduction and normalization
-- [ ] Implement voice activity detection (VAD)
-- [ ] Add audio level monitoring and visualization
-- [ ] Test audio capture on different devices
-- [ ] Implement audio format conversion utilities
-
-## Phase 4: Speech Recognition Integration  
-- [ ] Research and install Coqui STT dependencies
-- [ ] Download and test Coqui STT model files
-- [ ] Implement SpeechRecognitionService with Coqui STT
-- [ ] Implement CoquiSTTModel wrapper class
-- [ ] Add confidence scoring for transcriptions
-- [ ] Implement streaming speech recognition
-- [ ] Add language detection capabilities
-- [ ] Test transcription accuracy with various accents and audio conditions
-
-## Phase 5: AI Conversation Service
-- [ ] Install Anthropic Claude API client
-- [ ] Implement AIConversationService with Claude integration
-- [ ] Implement ClaudeAPIClient wrapper
-- [ ] Implement ConversationContext for chat history
-- [ ] Add conversation memory and context management
-- [ ] Implement response streaming for real-time feel
-- [ ] Add error handling for API failures and network issues
-- [ ] Test conversation quality and response times
-
-## Phase 6: Speech Synthesis
-- [ ] Research and install Coqui TTS dependencies
-- [ ] Download and test Coqui TTS model files
-- [ ] Implement SpeechSynthesisService with Coqui TTS
-- [ ] Implement CoquiTTSModel wrapper class
-- [ ] Configure voice selection and customization
-- [ ] Implement audio quality optimization
-- [ ] Add speech rate and pitch controls
-- [ ] Test voice naturalness and clarity
-
-## Phase 7: Audio Playback
-- [ ] Implement AudioPlayerService for speaker output
-- [ ] Add audio device selection and configuration
-- [ ] Implement playback queue management
-- [ ] Add volume control and audio mixing
-- [ ] Implement interruption handling (stop current speech when user speaks)
-- [ ] Test audio playback on different output devices
-- [ ] Add audio format compatibility layer
-
-## Phase 8: Event System and Integration
-- [ ] Implement complete EventBusService with Observer pattern
-- [ ] Define all event types and data structures
-- [ ] Implement event filtering and routing
-- [ ] Add event logging and debugging
-- [ ] Connect all services through event bus
-- [ ] Test end-to-end conversation flow
-- [ ] Add event-driven error handling
-
-## Phase 9: Configuration and Settings
-- [ ] Implement ConfigurationManager with Singleton pattern
-- [ ] Create configuration file structure (YAML/JSON)
-- [ ] Add audio device configuration
-- [ ] Add model configuration (STT/TTS model paths)
-- [ ] Add API configuration (Claude API keys)
-- [ ] Implement runtime configuration updates
-- [ ] Add configuration validation and error handling
-
-## Phase 10: User Interface and Control
-- [ ] Implement command-line interface
-- [ ] Add voice assistant start/stop commands
-- [ ] Implement status display and logging
-- [ ] Add real-time audio level visualization
-- [ ] Add conversation history display
-- [ ] Implement voice commands for system control
-- [ ] Add graceful shutdown and cleanup
-
-## Phase 11: Error Handling and Robustness
-- [ ] Implement comprehensive error handling for all components
-- [ ] Add retry mechanisms for network failures
-- [ ] Implement fallback strategies for component failures
-- [ ] Add health monitoring and self-recovery
-- [ ] Implement graceful degradation (e.g., text-only mode if TTS fails)
-- [ ] Add detailed logging and error reporting
-- [ ] Test system behavior under various failure conditions
-
-## Phase 12: Performance Optimization
-- [ ] Profile audio processing pipeline performance
-- [ ] Optimize model loading and memory usage
-- [ ] Implement audio buffer optimization
-- [ ] Add multi-threading for concurrent processing
-- [ ] Optimize network request handling
-- [ ] Implement caching strategies where appropriate
-- [ ] Test performance under sustained usage
-
-## Phase 13: Testing and Quality Assurance
-- [ ] Implement unit tests for all service classes
-- [ ] Create integration tests for component interactions
-- [ ] Implement BDD test scenarios based on Gherkin features
-- [ ] Add audio quality testing and metrics
-- [ ] Test conversation accuracy and context preservation
-- [ ] Test system under various audio conditions and noise levels
-- [ ] Perform stress testing and load testing
-- [ ] Test on different operating systems and hardware
-
-## Phase 14: Documentation and Deployment
-- [ ] Create comprehensive API documentation
-- [ ] Write user manual and setup guide
-- [ ] Create developer documentation for extending the system
-- [ ] Add inline code documentation and comments
-- [ ] Create installation and dependency management scripts
-- [ ] Write troubleshooting guide
-- [ ] Prepare deployment configurations
-
-## Phase 15: Advanced Features (Future Enhancements)
-- [ ] Add support for multiple languages
-- [ ] Implement custom wake word detection
-- [ ] Add voice training and personalization
-- [ ] Implement conversation export and analysis
-- [ ] Add plugin system for extending functionality
-- [ ] Implement web interface for remote control
-- [ ] Add multi-user support and voice recognition
-- [ ] Integrate with smart home systems
-
-## Success Criteria
-- ✅ System successfully transcribes clear speech with >95% accuracy
-- ✅ AI responses are contextually appropriate and conversational
-- ✅ Voice synthesis sounds natural and clear
-- ✅ End-to-end conversation latency under 3 seconds
-- ✅ System handles interruptions gracefully
-- ✅ Robust error handling with graceful degradation
-- ✅ Easy to configure and extend
-- ✅ Comprehensive test coverage
-- ✅ Well-documented codebase
-
-## Risk Mitigation
-- **Coqui STT/TTS Model Issues**: Have fallback models and test thoroughly
-- **Audio Device Compatibility**: Test on multiple platforms and devices
-- **Network Dependency**: Implement offline fallback modes
-- **Performance Issues**: Profile early and optimize iteratively
-- **Complex Integration**: Use proper design patterns and modular architecture
-
-## Development Principles
-- **Plan Before Code**: No implementation without corresponding design
-- **Test-Driven Development**: Write tests based on BDD scenarios
-- **SOLID Principles**: Maintain clean, extensible architecture
-- **GoF Design Patterns**: Use appropriate patterns for system design
-- **Behavior-Driven**: Focus on user scenarios and requirements
-- **Investigate Don't Switch**: Debug thoroughly before changing approach
+This document tracks the development roadmap for Astir, a natural conversation voice assistant built with Python, OpenRouter AI, Whisper STT, and Coqui TTS using Gang of Four design patterns.
 
 ---
 
-*This roadmap should be updated as development progresses and requirements evolve.*
+## 🎯 **PHASE 1: Core Foundation** 
+*Status: 🔴 Not Started*
+
+### 1.1 Project Setup & Architecture
+- [ ] **Project Structure**: Create clean Python project structure following specifications
+- [ ] **Virtual Environment**: Set up Python 3.9-3.11 environment with dependencies
+- [ ] **Configuration System**: Implement YAML-based configuration with environment overrides
+- [ ] **Logging Framework**: Set up structured logging with rotation and levels
+- [ ] **Error Handling**: Create custom exception hierarchy and error recovery patterns
+
+### 1.2 Core Design Patterns Implementation
+- [ ] **Event Bus Service**: Observer pattern for loose coupling between components
+- [ ] **Configuration Manager**: Singleton pattern for centralized configuration
+- [ ] **Service Factory**: Factory pattern for service instantiation and dependency injection
+- [ ] **Strategy Interfaces**: Abstract base classes for STT, TTS, and AI services
+
+### 1.3 Basic Testing Framework
+- [ ] **Unit Test Setup**: pytest configuration with async support
+- [ ] **Mock Services**: Create mock implementations for external dependencies
+- [ ] **Test Utilities**: Helper functions for testing audio and AI components
+- [ ] **CI/CD Pipeline**: Basic GitHub Actions for automated testing
+
+---
+
+## 🎤 **PHASE 2: Audio Processing Pipeline**
+*Status: 🔴 Not Started*
+
+### 2.1 Audio Capture Service
+- [ ] **Microphone Input**: PyAudio integration with device selection
+- [ ] **Voice Activity Detection**: Real-time VAD with configurable sensitivity
+- [ ] **Audio Preprocessing**: Noise reduction, normalization, and buffering
+- [ ] **Continuous Listening**: Always-on audio capture without activation words
+
+### 2.2 Audio Output Service  
+- [ ] **Speaker Output**: Audio playback with volume control and device selection
+- [ ] **Audio Queue Management**: Buffering and streaming for smooth playback
+- [ ] **Interruption Handling**: Immediate stop capability for natural conversation
+- [ ] **Audio Format Conversion**: Support multiple audio formats and sample rates
+
+### 2.3 Audio Pipeline Integration
+- [ ] **Event-Driven Flow**: Audio events through the event bus system
+- [ ] **Performance Optimization**: Low-latency audio processing (<100ms)
+- [ ] **Error Recovery**: Graceful handling of audio device failures
+- [ ] **Resource Management**: Proper cleanup and memory management
+
+---
+
+## 🗣️ **PHASE 3: Speech Recognition (Whisper STT)**
+*Status: 🔴 Not Started*
+
+### 3.1 Whisper Integration
+- [ ] **Model Loading**: Lazy loading of Whisper models (base/small/medium)
+- [ ] **Strategy Implementation**: WhisperSTT strategy following the Strategy pattern
+- [ ] **Real-time Processing**: Streaming audio to text conversion
+- [ ] **Language Detection**: Automatic language detection and configuration
+
+### 3.2 Speech Recognition Service
+- [ ] **Transcription Pipeline**: Audio chunks to text with confidence scoring
+- [ ] **Context Awareness**: Conversation context for better accuracy
+- [ ] **Error Handling**: Fallback strategies for failed transcriptions
+- [ ] **Performance Tuning**: Optimize for speed vs accuracy based on use case
+
+### 3.3 Natural Speech Processing
+- [ ] **Punctuation Restoration**: Add natural punctuation to transcriptions
+- [ ] **Disfluency Handling**: Process "um", "uh", and natural speech patterns
+- [ ] **Turn Detection**: Identify natural conversation boundaries
+- [ ] **Confidence Filtering**: Filter low-confidence transcriptions appropriately
+
+---
+
+## 🤖 **PHASE 4: AI Integration (OpenRouter)**
+*Status: 🔴 Not Started*
+
+### 4.1 OpenRouter Client Implementation
+- [ ] **API Client**: OpenRouter-compatible client using OpenAI SDK
+- [ ] **Model Selection**: Support for Claude, GPT, Llama models via OpenRouter
+- [ ] **Streaming Responses**: Real-time response streaming for natural conversation
+- [ ] **Error Handling**: Robust error handling with retry logic and fallbacks
+
+### 4.2 Conversation Service
+- [ ] **Context Management**: Maintain conversation history and context
+- [ ] **Natural Prompting**: Conversational system prompts for natural responses
+- [ ] **Response Processing**: Parse and format AI responses for speech synthesis
+- [ ] **Interruption Support**: Handle conversation interruptions gracefully
+
+### 4.3 AI Service Integration
+- [ ] **Event Integration**: AI events through the event bus system
+- [ ] **Performance Optimization**: Fast response times (<2s) for natural conversation
+- [ ] **Rate Limiting**: Handle API rate limits and usage monitoring
+- [ ] **Model Switching**: Runtime model switching based on requirements
+
+---
+
+## 🎵 **PHASE 5: Speech Synthesis (Coqui TTS)**
+*Status: 🔴 Not Started*
+
+### 5.1 Coqui TTS Integration
+- [ ] **Model Loading**: XTTS-v2 model with voice cloning capabilities
+- [ ] **Strategy Implementation**: CoquiTTS strategy following the Strategy pattern
+- [ ] **Voice Selection**: Multiple voice options with natural-sounding output
+- [ ] **Performance Optimization**: GPU acceleration when available
+
+### 5.2 Speech Synthesis Service
+- [ ] **Text-to-Speech Pipeline**: High-quality, natural voice synthesis
+- [ ] **Streaming Audio**: Real-time audio generation and playback
+- [ ] **Voice Customization**: Adjustable speaking rate, pitch, and naturalness
+- [ ] **Audio Quality**: Optimize for natural conversation quality
+
+### 5.3 Natural Speech Generation
+- [ ] **Prosody Control**: Natural intonation and emphasis
+- [ ] **Pause Insertion**: Appropriate pauses for natural speech flow
+- [ ] **Emotion Support**: Basic emotional tone in voice synthesis
+- [ ] **Interruption Recovery**: Handle mid-sentence interruptions gracefully
+
+---
+
+## 🎭 **PHASE 6: Natural Conversation Flow**
+*Status: 🔴 Not Started*
+
+### 6.1 Conversation State Management
+- [ ] **State Machine**: Implement conversation states (listening, processing, speaking)
+- [ ] **Turn-Taking**: Natural conversation turn-taking without explicit prompts
+- [ ] **Context Preservation**: Maintain conversation context across interactions
+- [ ] **Topic Switching**: Handle natural topic changes and tangents
+
+### 6.2 Interruption & Correction Handling
+- [ ] **Real-time Interruption**: Immediate response to user interruptions
+- [ ] **Graceful Recovery**: Resume or redirect conversation after interruptions
+- [ ] **Correction Processing**: Handle user corrections naturally
+- [ ] **Clarification Requests**: Natural requests for clarification when needed
+
+### 6.3 Conversational Intelligence
+- [ ] **Response Brevity**: Concise, conversational responses by default
+- [ ] **Natural Language**: Contractions, casual speech patterns
+- [ ] **Context Awareness**: Reference previous conversation naturally
+- [ ] **Personality Consistency**: Maintain consistent conversational personality
+
+---
+
+## 🏗️ **PHASE 7: System Integration & Facade**
+*Status: 🔴 Not Started*
+
+### 7.1 Voice Assistant Facade
+- [ ] **Main Orchestrator**: Implement Facade pattern for system coordination
+- [ ] **Service Lifecycle**: Manage initialization, startup, and shutdown
+- [ ] **Health Monitoring**: Monitor service health and automatic recovery
+- [ ] **Configuration Hot-reload**: Runtime configuration updates
+
+### 7.2 End-to-End Integration
+- [ ] **Complete Pipeline**: Audio input → STT → AI → TTS → Audio output
+- [ ] **Event Coordination**: Seamless event flow between all components
+- [ ] **Error Recovery**: System-wide error handling and graceful degradation
+- [ ] **Performance Monitoring**: Real-time performance metrics and optimization
+
+### 7.3 User Interface & Control
+- [ ] **CLI Interface**: Command-line interface for system control
+- [ ] **Status Monitoring**: Real-time system status and conversation state
+- [ ] **Configuration Management**: Runtime configuration viewing and updates
+- [ ] **Logging & Debugging**: Comprehensive logging for troubleshooting
+
+---
+
+## 🧪 **PHASE 8: Testing & Quality Assurance**
+*Status: 🔴 Not Started*
+
+### 8.1 Comprehensive Testing
+- [ ] **Unit Tests**: >90% code coverage with comprehensive unit tests
+- [ ] **Integration Tests**: End-to-end conversation flow testing
+- [ ] **BDD Tests**: All Gherkin scenarios implemented and passing
+- [ ] **Performance Tests**: Latency, memory, and stress testing
+
+### 8.2 Quality Metrics
+- [ ] **Response Time**: <3s end-to-end conversation latency
+- [ ] **STT Accuracy**: >95% transcription accuracy for clear speech
+- [ ] **TTS Quality**: Natural-sounding voice output (MOS >4.0)
+- [ ] **System Reliability**: >99.5% uptime with graceful error handling
+
+### 8.3 User Acceptance Testing
+- [ ] **Natural Conversation**: Seamless, human-like conversation experience
+- [ ] **Interruption Handling**: Smooth interruption and recovery
+- [ ] **Context Maintenance**: Proper conversation context across turns
+- [ ] **Performance Validation**: Real-world performance under various conditions
+
+---
+
+## 🚀 **PHASE 9: Deployment & Documentation**
+*Status: 🔴 Not Started*
+
+### 9.1 Production Deployment
+- [ ] **Docker Containerization**: Production-ready Docker setup
+- [ ] **Environment Configuration**: Production configuration optimization
+- [ ] **Model Optimization**: Optimized models for production performance
+- [ ] **Monitoring & Alerting**: Production monitoring and alerting setup
+
+### 9.2 Documentation & Guides
+- [ ] **API Documentation**: Comprehensive API documentation
+- [ ] **User Guide**: End-user setup and usage guide
+- [ ] **Developer Guide**: Architecture and extension guide
+- [ ] **Troubleshooting**: Common issues and solutions guide
+
+### 9.3 Distribution & Packaging
+- [ ] **Python Package**: PyPI-ready package distribution
+- [ ] **Installation Scripts**: Automated setup and installation
+- [ ] **Configuration Templates**: Example configurations for different use cases
+- [ ] **Release Management**: Version management and release automation
+
+---
+
+## 📊 **Current Development Focus**
+
+### 🎯 **IMMEDIATE NEXT STEPS**
+1. **Set up project structure** following the technical specifications
+2. **Implement core event bus** for component communication
+3. **Create configuration management** system with YAML support
+4. **Build basic audio capture** service with VAD
+5. **Integrate Whisper STT** with strategy pattern
+
+### 🔧 **TECHNICAL DEBT & IMPROVEMENTS**
+- None yet - starting fresh!
+
+### 🐛 **KNOWN ISSUES**
+- None yet - clean slate!
+
+### 📈 **PERFORMANCE TARGETS**
+- **Audio Latency**: <100ms (capture to processing)
+- **STT Processing**: <500ms (Whisper base model)
+- **AI Response**: <2000ms (network dependent)
+- **TTS Generation**: <300ms (Coqui TTS)
+- **Total End-to-End**: <3000ms
+
+---
+
+## 🎉 **SUCCESS CRITERIA**
+
+The project will be considered successful when:
+
+1. ✅ **Natural Conversation**: Users can have seamless, natural conversations without activation words or prompts
+2. ✅ **Real-time Performance**: <3s end-to-end latency for typical interactions
+3. ✅ **High Accuracy**: >95% STT accuracy and natural-sounding TTS output
+4. ✅ **Robust Architecture**: Fault-tolerant system with graceful error handling
+5. ✅ **Extensible Design**: Easy to add new AI models, voices, or features
+6. ✅ **Production Ready**: Deployable system with monitoring and documentation
+
+---
+
+*Last Updated: Starting Fresh - Ready to Build! 🚀*

@@ -1,4 +1,4 @@
-Feature: Natural Voice Conversation with Claude AI
+Feature: Natural Voice Conversation with OpenRouter AI
   As a user
   I want to have seamless, natural conversations like talking to a person
   So that I can interact naturally without prompts, wake words, or robotic responses
@@ -7,7 +7,7 @@ Feature: Natural Voice Conversation with Claude AI
     Given the voice assistant system is in natural conversation mode
     And Whisper STT is loaded and ready for continuous listening
     And Coqui TTS is loaded with a natural voice model
-    And Claude API is configured for conversational responses
+    And OpenRouter API is configured for conversational responses
     And audio input/output devices are working
     And the system is continuously listening without activation words
 
@@ -29,7 +29,7 @@ Feature: Natural Voice Conversation with Claude AI
 
   Scenario: Concise conversational responses
     Given I ask "What's the weather like today?"
-    When Claude responds
+    When the AI responds
     Then the response should be brief and natural like "It's sunny and 72 degrees"
     And not include verbose explanations like "I'll help you check the weather"
     And sound like something a person would say in conversation
@@ -46,7 +46,7 @@ Feature: Natural Voice Conversation with Claude AI
     Given I have already had a conversation with the assistant
     When I ask a follow-up question like "Tell me more about that"
     Then the system should maintain conversation context
-    And Claude should reference our previous discussion
+    And the AI should reference our previous discussion
     And provide a relevant response based on context
 
   Scenario: Voice activity detection
@@ -59,24 +59,24 @@ Feature: Natural Voice Conversation with Claude AI
     And begin recording my speech
 
   Scenario: Natural interruption handling
-    Given Claude is saying "The best laptops for programming are typically MacBooks because they have..."
+    Given the AI is saying "The best laptops for programming are typically MacBooks because they have..."
     When I interrupt by saying "What about Windows laptops?"
-    Then Claude should immediately stop speaking
+    Then the AI should immediately stop speaking
     And respond naturally to my Windows laptop question
     And not acknowledge being interrupted or apologize
     And continue the conversation seamlessly about Windows options
 
   Scenario: Accepting corrections gracefully
-    Given Claude just said "Python is compiled language"
+    Given the AI just said "Python is compiled language"
     When I correct with "No, Python is interpreted"
-    Then Claude should accept the correction naturally
+    Then the AI should accept the correction naturally
     And say something like "You're right, Python is interpreted"
     And not be defensive or verbose about the correction
     And continue the conversation with the corrected information
 
   Scenario: Natural clarification requests
     Given I say something vague like "Can you help me with that coding thing?"
-    When Claude needs more information
+    When the AI needs more information
     Then it should ask naturally like "Which coding topic are you thinking about?"
     And not use formal language like "I need more information to assist you"
     And sound like a person asking for clarification
@@ -93,7 +93,7 @@ Feature: Natural Voice Conversation with Claude AI
   Scenario: Real-time conversation flow
     Given the voice assistant is in conversation mode
     When I say "Tell me a joke"
-    Then Claude should respond with a joke within 3 seconds
+    Then the AI should respond with a joke within 3 seconds
     And I should hear the complete joke
     When the joke finishes playing
     Then the system should automatically return to listening mode
@@ -108,7 +108,7 @@ Feature: Natural Voice Conversation with Claude AI
     And the system should display "Voice assistant stopped"
 
   Scenario: Voice quality and naturalness
-    Given Claude has generated a text response
+    Given the AI has generated a text response
     When the text is converted to speech using Coqui TTS
     Then the voice should sound natural and human-like
     And pronunciation should be clear and accurate
@@ -117,10 +117,10 @@ Feature: Natural Voice Conversation with Claude AI
 
   Scenario: Multi-turn conversation
     Given I start a conversation with "Hi there"
-    When Claude responds with a greeting
+    When the AI responds with a greeting
     And I follow up with "What can you help me with?"
-    And Claude explains its capabilities
+    And the AI explains its capabilities
     And I ask "Can you help me with Python programming?"
-    Then Claude should provide relevant programming assistance
+    Then the AI should provide relevant programming assistance
     And maintain context throughout the multi-turn conversation
     And each response should build naturally on the previous exchange

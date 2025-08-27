@@ -1,7 +1,7 @@
 # Technical Specifications - Voice Assistant System
 
 ## System Overview
-A real-time voice assistant built with Python, integrating OpenAI Whisper (STT), Coqui TTS, and Claude AI using Gang of Four design patterns and behavior-driven development principles.
+A real-time voice assistant built with Python, integrating OpenAI Whisper (STT), Coqui TTS, and OpenRouter AI (Claude, GPT, Llama models) using Gang of Four design patterns and behavior-driven development principles.
 
 ## Architecture Summary
 
@@ -10,7 +10,7 @@ A real-time voice assistant built with Python, integrating OpenAI Whisper (STT),
 2. **EventBusService** - Event-driven communication hub (Observer Pattern)
 3. **AudioCaptureService** - Microphone input management
 4. **SpeechRecognitionService** - Speech-to-text using Whisper (Strategy Pattern)
-5. **AIConversationService** - Claude API integration (Command Pattern)
+5. **AIConversationService** - OpenRouter API integration (Command Pattern)
 6. **SpeechSynthesisService** - Text-to-speech using Coqui TTS (Strategy Pattern)
 7. **AudioPlayerService** - Speaker output management
 8. **ConfigurationManager** - System configuration (Singleton Pattern)
@@ -21,7 +21,7 @@ A real-time voice assistant built with Python, integrating OpenAI Whisper (STT),
 - **Language**: Python 3.9+
 - **STT**: OpenAI Whisper (faster-whisper for production)
 - **TTS**: Coqui TTS with XTTS-v2 model
-- **AI**: Claude API (Anthropic)
+- **AI**: OpenRouter API (Claude, GPT, Llama models)
 - **Audio I/O**: PyAudio + SoundDevice
 - **Event System**: Custom Observer pattern implementation
 
@@ -41,7 +41,7 @@ faster-whisper>=0.10.0  # Production alternative
 coqui-tts>=0.22.0
 
 # AI integration
-anthropic>=0.18.0
+openai>=1.0.0  # OpenRouter compatible
 
 # Utilities
 numpy>=1.24.0
@@ -60,7 +60,7 @@ black>=23.0.0
 - **RAM**: Minimum 8GB, 16GB recommended for voice cloning
 - **GPU**: Optional but highly recommended for Coqui TTS performance
 - **Storage**: 4-6GB for models (Whisper + Coqui TTS)
-- **Network**: Required for Claude API calls
+- **Network**: Required for OpenRouter API calls
 
 ## Project Structure
 ```
@@ -95,7 +95,7 @@ Astir/
 │   ├── ai/                       # AI integration
 │   │   ├── __init__.py
 │   │   ├── conversation_service.py # AIConversationService
-│   │   └── claude_client.py      # Claude API wrapper
+│   │   └── openrouter_client.py  # OpenRouter API wrapper
 │   └── utils/                    # Utilities
 │       ├── __init__.py
 │       ├── exceptions.py         # Custom exceptions
@@ -196,9 +196,9 @@ speech:
     naturalness: "high" # Focus on natural-sounding speech
 
 ai:
-  provider: "claude"
-  api_key_env: "ANTHROPIC_API_KEY"
-  model: "claude-3-5-haiku-20241022"
+  provider: "openrouter"
+  api_key_env: "OPENROUTER_API_KEY"
+  model: "anthropic/claude-3.5-sonnet"  # Can use any OpenRouter model
   max_tokens: 150               # Shorter responses for conversation
   temperature: 0.8              # More natural variability
   timeout: 20                   # Faster timeout for conversation

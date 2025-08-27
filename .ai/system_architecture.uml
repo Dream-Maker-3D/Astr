@@ -33,7 +33,7 @@ package "Voice Assistant System" {
     RECTANGLE AIConversationService {
         +send_message(text)
         +get_response()
-        -claude_client: ClaudeAPIClient
+        -openrouter_client: OpenRouterAPIClient
         -conversation_context: ConversationContext
     }
     
@@ -81,7 +81,7 @@ package "Voice Assistant System" {
 package "External Services" {
     RECTANGLE CoquiSTTModel
     RECTANGLE CoquiTTSModel
-    RECTANGLE ClaudeAPIClient
+    RECTANGLE OpenRouterAPIClient
 }
 
 package "System Components" {
@@ -102,7 +102,7 @@ VoiceAssistantFacade --> EventBusService
 ' Service Dependencies
 SpeechRecognitionService --> CoquiSTTModel
 SpeechRecognitionService --> AudioPreprocessor
-AIConversationService --> ClaudeAPIClient
+AIConversationService --> OpenRouterAPIClient
 AIConversationService --> ConversationContext
 SpeechSynthesisService --> CoquiTTSModel
 SpeechSynthesisService --> VoiceConfiguration

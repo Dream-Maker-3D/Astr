@@ -53,7 +53,7 @@ package "LLM Integration Layer" {
     RECTANGLE LLMService {
         +streamConversation(messages: List<Message>): Stream<String>
         +sendMessage(message: String): Stream<String>
-        -apiClient: AnthropicClient
+        -apiClient: OpenRouterClient
         -conversationConfig: LLMConfig
     }
     

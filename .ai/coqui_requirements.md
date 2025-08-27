@@ -183,7 +183,7 @@ print(result["text"])
 1. **STT**: OpenAI Whisper (faster-whisper for production)
 2. **TTS**: Coqui TTS with XTTS-v2
 3. **Audio I/O**: PyAudio or SoundDevice
-4. **AI**: Claude API (Anthropic)
+4. **AI**: OpenRouter API (Claude, GPT, Llama models)
 
 ### Performance Considerations:
 - **GPU**: Essential for real-time voice cloning

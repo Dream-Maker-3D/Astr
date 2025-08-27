@@ -73,7 +73,7 @@ vad:
 
 ## AI Conversation Requirements
 
-### Claude API Integration for Natural Conversation
+### OpenRouter API Integration for Natural Conversation
 ```python
 # Updated conversation context for natural flow
 conversation_context = {
@@ -208,22 +208,22 @@ Feature: Natural Conversation Flow
     And not say "How can I help you" or similar formal responses
 
   Scenario: Natural interruption handling
-    Given Claude is saying "Dogs make great companions because they're loyal and..."
+    Given the AI is saying "Dogs make great companions because they're loyal and..."
     When I interrupt by saying "What about cats?"
-    Then Claude should immediately stop speaking
+    Then the AI should immediately stop speaking
     And respond to my interruption about cats
     And not reference being interrupted
 
   Scenario: Concise conversational responses
     Given I ask "What's the weather like?"
-    When Claude responds
+    When the AI responds
     Then the response should be brief and conversational
     And not include verbose explanations unless I ask for them
     And sound natural when spoken aloud
 
   Scenario: Natural clarification requests
     Given I say something unclear like "Can you help with that thing?"
-    When Claude needs clarification
+    When the AI needs clarification
     Then it should ask naturally like "What thing are you referring to?"
     And not use formal error language or structured prompts
 ```
