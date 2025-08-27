@@ -31,7 +31,7 @@ This document tracks the development roadmap for Astir, a natural conversation v
 ---
 
 ## 🎤 **PHASE 2: Audio Processing Pipeline**
-*Status: 🔴 Not Started*
+*Status: ✅ COMPLETED*
 
 ### 2.1 Audio Capture Service
 - [x] **Microphone Input**: PyAudio integration with device selection
@@ -46,10 +46,16 @@ This document tracks the development roadmap for Astir, a natural conversation v
 - [x] **Audio Format Conversion**: Support multiple audio formats and sample rates
 
 ### 2.3 Audio Pipeline Integration
-- [ ] **Event-Driven Flow**: Audio events through the event bus system
-- [ ] **Performance Optimization**: Low-latency audio processing (<100ms)
-- [ ] **Error Recovery**: Graceful handling of audio device failures
-- [ ] **Resource Management**: Proper cleanup and memory management
+- [x] **Event-Driven Flow**: Audio events through the event bus system
+- [x] **Performance Optimization**: Low-latency audio processing (<100ms)
+- [x] **Error Recovery**: Graceful handling of audio device failures
+- [x] **Resource Management**: Proper cleanup and memory management
+
+### 2.4 Service Factory Implementation
+- [x] **Dependency Injection**: Centralized service creation and dependency resolution
+- [x] **Service Lifecycle**: Singleton/Transient lifetime management with proper disposal
+- [x] **Thread Safety**: Concurrent service access with synchronization
+- [x] **Mock Support**: Testing infrastructure with service mocking capabilities
 
 ---
 
@@ -222,8 +228,9 @@ This document tracks the development roadmap for Astir, a natural conversation v
 3. ✅ **Create configuration management** system with YAML support
 4. ✅ **Build basic audio capture** service with VAD
 5. ✅ **Build audio output service** for TTS playback
-6. **Create service factory** for dependency injection
+6. ✅ **Create service factory** for dependency injection
 7. **Integrate Whisper STT** with strategy pattern
+8. **Implement Coqui TTS** with voice synthesis
 
 ### 🔧 **TECHNICAL DEBT & IMPROVEMENTS**
 - None yet - starting fresh!
@@ -253,4 +260,4 @@ The project will be considered successful when:
 
 ---
 
-*Last Updated: Audio Player Service Complete - TTS Playback with Queue Management Implemented! 🔊*
+*Last Updated: Service Factory Complete - Phase 2 Audio Processing Pipeline Complete! 🏭*
