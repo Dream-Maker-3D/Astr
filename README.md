@@ -133,8 +133,9 @@ pytest tests/unit/core/test_event_bus.py::TestEventBusPerformance -v
 - [x] **Audio Player Service** - Speaker output management with queue system
 - [x] **Service Factory** - Factory pattern for service instantiation and dependency injection
 
-### **📋 Phase 3: Speech Processing (PLANNED)**
-- [ ] **Speech Recognition Service** - Whisper STT integration
+### **🔄 Phase 3: Speech Processing (IN PROGRESS)**
+- [x] **Speech Recognition Service** - Core STT service with Strategy pattern (BDD Complete)
+- [ ] **Whisper STT Strategy** - OpenAI Whisper implementation
 - [ ] **Speech Synthesis Service** - Coqui TTS integration
 - [ ] **Natural Speech Processing** - Conversation flow management
 

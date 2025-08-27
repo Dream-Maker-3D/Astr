@@ -1,0 +1,251 @@
+@startuml Speech Recognition Class Diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageFontSize 14
+
+package "Speech Recognition System" {
+    
+    ' Strategy Pattern Interface
+    interface ISpeechRecognition {
+        +initialize() : bool
+        +transcribe_audio(audio_data: AudioData) : TranscriptionResult
+        +transcribe_stream(audio_stream: AudioStream) : Iterator[PartialResult]
+        +detect_language(audio_data: AudioData) : LanguageResult
+        +get_capabilities() : STTCapabilities
+        +shutdown() : void
+    }
+    
+    ' Main Service Class
+    class SpeechRecognitionService {
+        -_event_bus: EventBusService
+        -_config: SpeechConfig
+        -_stt_strategy: ISpeechRecognition
+        -_is_initialized: bool
+        -_processing_queue: Queue[AudioData]
+        -_worker_thread: Thread
+        -_statistics: STTStatistics
+        -_context_manager: ConversationContext
+        
+        +initialize() : bool
+        +set_strategy(strategy: ISpeechRecognition) : void
+        +process_audio(audio_data: AudioData) : TranscriptionResult
+        +start_streaming(audio_stream: AudioStream) : void
+        +stop_streaming() : void
+        +get_statistics() : STTStatistics
+        +shutdown() : void
+        
+        -_process_audio_worker() : void
+        -_handle_transcription_result(result: TranscriptionResult) : void
+        -_publish_events(event_type: str, data: dict) : void
+    }
+    
+    ' Concrete Strategy Implementations
+    class WhisperSTTStrategy {
+        -_model: WhisperModel
+        -_model_size: str
+        -_device: str
+        -_language: str
+        -_processor: WhisperProcessor
+        
+        +initialize() : bool
+        +transcribe_audio(audio_data: AudioData) : TranscriptionResult
+        +transcribe_stream(audio_stream: AudioStream) : Iterator[PartialResult]
+        +detect_language(audio_data: AudioData) : LanguageResult
+        +get_capabilities() : STTCapabilities
+        +shutdown() : void
+        
+        -_load_model() : WhisperModel
+        -_preprocess_audio(audio_data: AudioData) : ProcessedAudio
+        -_postprocess_result(raw_result: dict) : TranscriptionResult
+    }
+    
+    class FastWhisperSTTStrategy {
+        -_model: FastWhisperModel
+        -_batch_size: int
+        -_beam_size: int
+        -_vad_filter: bool
+        
+        +initialize() : bool
+        +transcribe_audio(audio_data: AudioData) : TranscriptionResult
+        +transcribe_stream(audio_stream: AudioStream) : Iterator[PartialResult]
+        +detect_language(audio_data: AudioData) : LanguageResult
+        +get_capabilities() : STTCapabilities
+        +shutdown() : void
+        
+        -_optimize_for_streaming() : void
+        -_handle_vad_segments(segments: List[AudioSegment]) : List[TranscriptionResult]
+    }
+    
+    class CloudSTTStrategy {
+        -_api_client: CloudAPIClient
+        -_api_key: str
+        -_endpoint: str
+        -_retry_config: RetryConfig
+        
+        +initialize() : bool
+        +transcribe_audio(audio_data: AudioData) : TranscriptionResult
+        +transcribe_stream(audio_stream: AudioStream) : Iterator[PartialResult]
+        +detect_language(audio_data: AudioData) : LanguageResult
+        +get_capabilities() : STTCapabilities
+        +shutdown() : void
+        
+        -_handle_api_errors(error: APIError) : void
+        -_format_for_api(audio_data: AudioData) : APIRequest
+    }
+}
+
+package "Data Classes" {
+    class AudioData {
+        +data: bytes
+        +sample_rate: int
+        +channels: int
+        +duration: float
+        +format: AudioFormat
+        +timestamp: datetime
+        +metadata: dict
+        
+        +to_numpy() : ndarray
+        +resample(target_rate: int) : AudioData
+        +normalize() : AudioData
+    }
+    
+    class TranscriptionResult {
+        +text: str
+        +confidence: float
+        +language: str
+        +segments: List[TranscriptionSegment]
+        +processing_time: float
+        +metadata: TranscriptionMetadata
+        +audio_id: str
+        
+        +is_high_confidence() : bool
+        +get_word_timestamps() : List[WordTimestamp]
+        +to_dict() : dict
+    }
+    
+    class PartialResult {
+        +partial_text: str
+        +confidence: float
+        +is_final: bool
+        +segment_id: str
+        +timestamp: float
+        
+        +merge_with(other: PartialResult) : PartialResult
+    }
+    
+    class LanguageResult {
+        +language: str
+        +confidence: float
+        +alternatives: List[LanguageAlternative]
+        +detection_method: str
+        
+        +is_confident() : bool
+    }
+    
+    class STTCapabilities {
+        +supports_streaming: bool
+        +supports_language_detection: bool
+        +supported_languages: List[str]
+        +max_audio_length: int
+        +supported_formats: List[AudioFormat]
+        +real_time_factor: float
+        
+        +is_compatible_with(requirements: STTRequirements) : bool
+    }
+    
+    class STTStatistics {
+        +total_transcriptions: int
+        +average_processing_time: float
+        +accuracy_score: float
+        +language_distribution: dict
+        +error_count: int
+        +uptime: float
+        
+        +get_performance_metrics() : dict
+    }
+    
+    class ConversationContext {
+        +conversation_history: List[str]
+        +current_topic: str
+        +speaker_profile: SpeakerProfile
+        +context_window: int
+        
+        +add_transcription(text: str) : void
+        +get_context_for_enhancement(text: str) : str
+        +update_topic(new_topic: str) : void
+    }
+}
+
+package "External Dependencies" {
+    class WhisperModel {
+        +model_name: str
+        +device: str
+        +compute_type: str
+        
+        +transcribe(audio: ndarray) : dict
+        +detect_language(audio: ndarray) : dict
+    }
+    
+    class FastWhisperModel {
+        +model_size: str
+        +device: str
+        +cpu_threads: int
+        
+        +transcribe(audio: ndarray, **kwargs) : Iterator[dict]
+    }
+    
+    class CloudAPIClient {
+        +base_url: str
+        +api_key: str
+        +timeout: int
+        
+        +post_audio(audio_data: bytes) : dict
+        +stream_audio(audio_stream: Iterator[bytes]) : Iterator[dict]
+    }
+}
+
+package "Core Services" {
+    class EventBusService {
+        +publish(event_type: str, data: dict) : void
+        +subscribe(event_type: str, handler: Callable) : void
+    }
+    
+    class ConfigurationManager {
+        +get_speech_config() : SpeechConfig
+    }
+    
+    class AudioCaptureService {
+        +get_audio_stream() : AudioStream
+    }
+}
+
+' Relationships
+ISpeechRecognition <|-- WhisperSTTStrategy
+ISpeechRecognition <|-- FastWhisperSTTStrategy
+ISpeechRecognition <|-- CloudSTTStrategy
+
+SpeechRecognitionService --> ISpeechRecognition : uses
+SpeechRecognitionService --> EventBusService : publishes to
+SpeechRecognitionService --> ConfigurationManager : gets config from
+SpeechRecognitionService --> AudioCaptureService : receives audio from
+
+WhisperSTTStrategy --> WhisperModel : uses
+FastWhisperSTTStrategy --> FastWhisperModel : uses
+CloudSTTStrategy --> CloudAPIClient : uses
+
+SpeechRecognitionService --> AudioData : processes
+SpeechRecognitionService --> TranscriptionResult : produces
+SpeechRecognitionService --> STTStatistics : maintains
+SpeechRecognitionService --> ConversationContext : uses
+
+TranscriptionResult --> PartialResult : contains
+STTCapabilities --> LanguageResult : supports
+
+' Notes
+note right of ISpeechRecognition : Strategy Pattern Interface\nAllows swapping between different\nSTT implementations
+note bottom of SpeechRecognitionService : Main orchestrator that manages\nSTT processing and event publishing
+note left of WhisperSTTStrategy : Default implementation using\nOpenAI Whisper models
+note right of ConversationContext : Maintains conversation state\nfor context-aware transcription
+
+@enduml

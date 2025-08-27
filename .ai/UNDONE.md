@@ -60,9 +60,13 @@ This document tracks the development roadmap for Astir, a natural conversation v
 ---
 
 ## 🗣️ **PHASE 3: Speech Recognition (Whisper STT)**
-*Status: 🔴 Not Started*
+*Status: 🔄 In Progress - BDD Planning Complete*
 
 ### 3.1 Whisper Integration
+- [x] **BDD Planning**: Comprehensive Gherkin scenarios for STT service (17 scenarios)
+- [x] **UML Design**: Class diagram with Strategy pattern and service relationships
+- [x] **Sequence Design**: Complete STT pipeline flow with error handling
+- [x] **API Specification**: Interface definitions and data structures
 - [ ] **Model Loading**: Lazy loading of Whisper models (base/small/medium)
 - [ ] **Strategy Implementation**: WhisperSTT strategy following the Strategy pattern
 - [ ] **Real-time Processing**: Streaming audio to text conversion
@@ -229,7 +233,7 @@ This document tracks the development roadmap for Astir, a natural conversation v
 4. ✅ **Build basic audio capture** service with VAD
 5. ✅ **Build audio output service** for TTS playback
 6. ✅ **Create service factory** for dependency injection
-7. **Integrate Whisper STT** with strategy pattern
+7. 🔄 **Integrate Whisper STT** with strategy pattern (BDD Complete - Ready for Implementation)
 8. **Implement Coqui TTS** with voice synthesis
 
 ### 🔧 **TECHNICAL DEBT & IMPROVEMENTS**

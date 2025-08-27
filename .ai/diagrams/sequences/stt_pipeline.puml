@@ -1,0 +1,191 @@
+@startuml STT Processing Pipeline Sequence
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 150
+
+title Speech-to-Text Processing Pipeline Flow
+
+actor User
+participant "Audio Capture\nService" as AudioCapture
+participant "Event Bus\nService" as EventBus
+participant "Speech Recognition\nService" as STTService
+participant "Whisper STT\nStrategy" as WhisperSTT
+participant "Whisper\nModel" as WhisperModel
+participant "Configuration\nManager" as Config
+participant "AI Conversation\nService" as AIService
+
+== Initialization Phase ==
+
+User -> STTService : initialize()
+activate STTService
+
+STTService -> Config : get_speech_config()
+activate Config
+Config --> STTService : SpeechConfig(model_size="base", language="auto")
+deactivate Config
+
+STTService -> WhisperSTT : initialize()
+activate WhisperSTT
+
+WhisperSTT -> WhisperModel : load_model("base", device="cpu")
+activate WhisperModel
+note right : Model loading can take 10-30s\ndepending on model size
+WhisperModel --> WhisperSTT : model_loaded
+deactivate WhisperModel
+
+WhisperSTT --> STTService : initialization_complete
+deactivate WhisperSTT
+
+STTService -> EventBus : subscribe("AUDIO_DATA_RECEIVED", handle_audio)
+STTService -> EventBus : subscribe("SPEECH_DETECTED", handle_speech_start)
+STTService -> EventBus : subscribe("SPEECH_ENDED", handle_speech_end)
+
+STTService --> User : service_ready
+deactivate STTService
+
+== Real-time Audio Processing ==
+
+User -> User : speaks naturally
+note right : "Hello, how are you today?"
+
+AudioCapture -> EventBus : publish("SPEECH_DETECTED", {rms: 0.045, timestamp: t1})
+EventBus -> STTService : handle_speech_start(event_data)
+activate STTService
+STTService -> STTService : prepare_transcription_buffer()
+deactivate STTService
+
+loop Continuous Audio Chunks
+    AudioCapture -> EventBus : publish("AUDIO_DATA_RECEIVED", audio_chunk)
+    EventBus -> STTService : handle_audio(audio_chunk)
+    activate STTService
+    
+    STTService -> STTService : accumulate_audio_buffer(audio_chunk)
+    note right : Buffer audio until\nspeech segment complete
+    
+    deactivate STTService
+end
+
+AudioCapture -> EventBus : publish("SPEECH_ENDED", {duration: 2.3s, timestamp: t2})
+EventBus -> STTService : handle_speech_end(event_data)
+activate STTService
+
+== Transcription Processing ==
+
+STTService -> EventBus : publish("TRANSCRIPTION_STARTED", {audio_id: "uuid-123", timestamp: t3})
+
+STTService -> WhisperSTT : transcribe_audio(accumulated_audio_buffer)
+activate WhisperSTT
+
+WhisperSTT -> WhisperSTT : preprocess_audio(audio_data)
+note right : Normalize, resample to 16kHz,\nconvert to mono if needed
+
+WhisperSTT -> WhisperModel : transcribe(preprocessed_audio)
+activate WhisperModel
+
+note over WhisperModel : Processing audio with Whisper...\n- Language detection\n- Speech recognition\n- Confidence scoring\n- Timestamp alignment
+
+WhisperModel --> WhisperSTT : raw_transcription_result
+deactivate WhisperModel
+
+WhisperSTT -> WhisperSTT : postprocess_result(raw_result)
+note right : - Add punctuation\n- Clean disfluencies\n- Format timestamps\n- Calculate confidence
+
+WhisperSTT --> STTService : TranscriptionResult(\n  text="Hello, how are you today?",\n  confidence=0.95,\n  language="en",\n  processing_time=0.42s\n)
+deactivate WhisperSTT
+
+== Result Processing & Event Publishing ==
+
+STTService -> STTService : validate_transcription_quality(result)
+alt High Confidence (>0.8)
+    STTService -> EventBus : publish("TRANSCRIPTION_COMPLETED", {\n  text: "Hello, how are you today?",\n  confidence: 0.95,\n  language: "en",\n  audio_id: "uuid-123",\n  processing_time: 0.42s,\n  timestamp: t4\n})
+    
+    EventBus -> AIService : handle_transcription(transcription_data)
+    activate AIService
+    note right : AI service processes\nthe transcribed text
+    deactivate AIService
+    
+else Low Confidence (<0.8)
+    STTService -> EventBus : publish("TRANSCRIPTION_UNCERTAIN", {\n  text: result.text,\n  confidence: result.confidence,\n  action: "request_clarification"\n})
+    
+    note over STTService : May trigger clarification\nrequest to user
+end
+
+STTService -> STTService : update_statistics(result)
+STTService --> User : transcription_complete
+deactivate STTService
+
+== Streaming Transcription (Alternative Flow) ==
+
+note over User, AIService : Alternative: Streaming Mode for Long Speech
+
+User -> User : speaks long sentence
+note right : "This is a comprehensive test of\nthe streaming transcription capabilities"
+
+AudioCapture -> EventBus : publish("SPEECH_DETECTED", stream_mode=true)
+EventBus -> STTService : handle_speech_start(stream_mode=true)
+activate STTService
+
+STTService -> WhisperSTT : transcribe_stream(audio_stream)
+activate WhisperSTT
+
+loop Streaming Chunks
+    WhisperSTT -> WhisperModel : transcribe_chunk(audio_chunk)
+    activate WhisperModel
+    WhisperModel --> WhisperSTT : partial_result
+    deactivate WhisperModel
+    
+    WhisperSTT --> STTService : PartialResult(\n  partial_text="This is a comprehensive",\n  confidence=0.87,\n  is_final=false\n)
+    
+    STTService -> EventBus : publish("TRANSCRIPTION_PARTIAL", partial_data)
+    EventBus -> AIService : handle_partial_transcription(partial_data)
+    
+    note right : AI can start processing\npartial results for faster response
+end
+
+WhisperSTT --> STTService : final_transcription_result
+deactivate WhisperSTT
+
+STTService -> EventBus : publish("TRANSCRIPTION_COMPLETED", final_result)
+deactivate STTService
+
+== Error Handling Flow ==
+
+note over User, AIService : Error Handling Scenarios
+
+AudioCapture -> EventBus : publish("AUDIO_DATA_RECEIVED", corrupted_audio)
+EventBus -> STTService : handle_audio(corrupted_audio)
+activate STTService
+
+STTService -> WhisperSTT : transcribe_audio(corrupted_audio)
+activate WhisperSTT
+
+WhisperSTT -> WhisperModel : transcribe(corrupted_audio)
+activate WhisperModel
+WhisperModel --> WhisperSTT : TranscriptionError("Invalid audio format")
+deactivate WhisperModel
+
+WhisperSTT --> STTService : TranscriptionError
+deactivate WhisperSTT
+
+STTService -> EventBus : publish("TRANSCRIPTION_ERROR", {\n  error_type: "audio_format_error",\n  message: "Invalid audio format",\n  audio_id: "uuid-456",\n  retry_possible: true\n})
+
+STTService -> STTService : attempt_error_recovery()
+alt Recovery Successful
+    STTService -> STTService : retry_with_fallback_strategy()
+else Recovery Failed
+    STTService -> EventBus : publish("TRANSCRIPTION_FAILED", {\n  error: "Unrecoverable transcription error",\n  audio_id: "uuid-456"\n})
+end
+
+deactivate STTService
+
+== Performance Monitoring ==
+
+note over STTService : Continuous Performance Tracking
+
+STTService -> STTService : track_metrics({\n  processing_time: 0.42s,\n  confidence: 0.95,\n  accuracy: estimated,\n  memory_usage: current\n})
+
+alt Performance Degradation Detected
+    STTService -> EventBus : publish("STT_PERFORMANCE_WARNING", {\n  metric: "processing_time",\n  current_value: 1.2s,\n  threshold: 0.5s,\n  recommendation: "consider_model_optimization"\n})
+end
+
+@enduml
