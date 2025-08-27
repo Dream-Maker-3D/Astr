@@ -619,12 +619,15 @@ class ServiceFactory(IServiceFactory):
         
         visited.add(service_type)
         
-        metadata = self._service_registry.get(service_type)
-        if metadata:
-            for dep in metadata.dependencies:
-                concrete_dep = self._resolve_concrete_type(dep)
-                if concrete_dep in self._service_registry:
-                    self._check_circular_dependencies(concrete_dep, visited.copy())
+        try:
+            metadata = self._service_registry.get(service_type)
+            if metadata:
+                for dep in metadata.dependencies:
+                    concrete_dep = self._resolve_concrete_type(dep)
+                    if concrete_dep in self._service_registry:
+                        self._check_circular_dependencies(concrete_dep, visited)
+        finally:
+            visited.remove(service_type)
 
 
 # Global service factory instance
