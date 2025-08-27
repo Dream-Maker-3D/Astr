@@ -33,6 +33,10 @@ from .conversation_state import (
     ConversationStateManager, ConversationState, TurnType,
     ConversationTurn, ConversationContext
 )
+from .interruption_handler import (
+    InterruptionHandler, InterruptionType, InterruptionPriority,
+    InterruptionEvent, CorrectionEvent
+)
 
 __all__ = [
     'EventBusService',
@@ -66,5 +70,12 @@ __all__ = [
     'ConversationState',
     'TurnType',
     'ConversationTurn',
-    'ConversationContext'
+    'ConversationContext',
+    
+    # Interruption Handling
+    'InterruptionHandler',
+    'InterruptionType',
+    'InterruptionPriority',
+    'InterruptionEvent',
+    'CorrectionEvent'
 ]

@@ -19,6 +19,7 @@ from .event_bus import EventBusService
 from .config_manager import ConfigurationManager
 from .service_factory import ServiceFactory
 from .conversation_state import ConversationStateManager, ConversationState
+from .interruption_handler import InterruptionHandler
 from ..audio.capture_service import AudioCaptureService
 from ..audio.player_service import AudioPlayerService
 from ..speech.recognition_service import SpeechRecognitionService
@@ -67,6 +68,7 @@ class VoiceAssistantFacade:
         self.event_bus: Optional[EventBusService] = None
         self.service_factory: Optional[ServiceFactory] = None
         self.conversation_manager: Optional[ConversationStateManager] = None
+        self.interruption_handler: Optional[InterruptionHandler] = None
         
         # Voice pipeline services
         self.audio_capture: Optional[AudioCaptureService] = None
@@ -108,6 +110,10 @@ class VoiceAssistantFacade:
             
             # Step 2.5: Initialize conversation management
             if not self._initialize_conversation_manager():
+                return False
+            
+            # Step 2.6: Initialize interruption handling
+            if not self._initialize_interruption_handler():
                 return False
             
             # Step 3: Initialize voice pipeline services
@@ -221,6 +227,29 @@ class VoiceAssistantFacade:
             logger.error(f"Failed to initialize conversation manager: {e}")
             return False
     
+    def _initialize_interruption_handler(self) -> bool:
+        """
+        Initialize interruption and correction handling.
+        
+        Returns:
+            bool: True if initialization successful
+        """
+        try:
+            logger.info("Initializing interruption handler...")
+            
+            # Create interruption handler
+            self.interruption_handler = InterruptionHandler(
+                self.event_bus, 
+                self.conversation_manager
+            )
+            
+            logger.info("✅ Interruption handler initialized")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize interruption handler: {e}")
+            return False
+    
     def _initialize_voice_services(self) -> bool:
         """Initialize voice pipeline services."""
         try:
@@ -256,6 +285,16 @@ class VoiceAssistantFacade:
             if not self.ai_conversation.initialize():
                 logger.error("Failed to initialize AI Conversation Service")
                 return False
+            
+            # Set service references for interruption handler
+            if self.interruption_handler:
+                self.interruption_handler.set_services(
+                    audio_capture=self.audio_capture,
+                    audio_player=self.audio_player,
+                    speech_recognition=self.speech_recognition,
+                    speech_synthesis=self.speech_synthesis,
+                    ai_conversation=self.ai_conversation
+                )
             
             logger.info("✅ Voice pipeline services initialized")
             return True
@@ -493,9 +532,11 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
                 'speech_recognition': self.speech_recognition.is_initialized if self.speech_recognition else False,
                 'speech_synthesis': self.speech_synthesis.is_initialized if self.speech_synthesis else False,
                 'ai_conversation': self.ai_conversation.is_initialized if self.ai_conversation else False,
-                'conversation_manager': self.conversation_manager is not None
+                'conversation_manager': self.conversation_manager is not None,
+                'interruption_handler': self.interruption_handler is not None
             },
-            'conversation': self.conversation_manager.get_conversation_stats() if self.conversation_manager else None
+            'conversation': self.conversation_manager.get_conversation_stats() if self.conversation_manager else None,
+            'interruption': self.interruption_handler.get_interruption_statistics() if self.interruption_handler else None
         }
     
     def get_system_health(self) -> Dict[str, Any]:
