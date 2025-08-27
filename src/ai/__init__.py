@@ -6,8 +6,8 @@ for natural language processing and conversation management.
 """
 
 # AI Conversation Service
-from .conversation_service import AIConversationService
 from .openrouter_client import OpenRouterClient
+# from .conversation_service import AIConversationService  # TODO: Implement next
 
 # Data structures and types
 from .types import (
@@ -19,8 +19,8 @@ from .types import (
 
 __all__ = [
     # Core Services
-    'AIConversationService',
     'OpenRouterClient',
+    # 'AIConversationService',  # TODO: Implement next
     
     # Data Types
     'ConversationRequest',

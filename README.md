@@ -138,17 +138,18 @@ pytest tests/unit/core/test_event_bus.py::TestEventBusPerformance -v
 - [x] **Whisper STT Strategy** - OpenAI Whisper implementation (Mock mode)
 - [ ] **Whisper Model Integration** - Actual Whisper model loading and processing
 
-### **🔄 Phase 4: AI Integration (ARCHITECTURE COMPLETE)**
+### **🔄 Phase 4: AI Integration (CLIENT COMPLETE)**
 - [x] **AI Conversation Service** - Core AI service planning and design (BDD Complete)
 - [x] **OpenRouter Integration** - Complete architecture with streaming support
 - [x] **Conversation Management** - Context window and memory management design
 - [x] **Event Integration** - AI events through Event Bus system (Planned)
 - [x] **Data Structures** - All AI conversation types and configuration classes
 - [x] **API Specification** - Complete interface definitions and error handling
-- [ ] **OpenRouter Client** - API client using OpenAI SDK for multiple models
+- [x] **OpenRouter Client** - API client using OpenAI SDK for multiple models
+- [x] **Rate Limiting & Statistics** - Request rate limiting and performance tracking
 - [ ] **Conversation Service** - Context management and natural prompting
 - [ ] **AI Response Processing** - Parse and format responses for TTS
-- [ ] **Model Selection** - Support for Claude, GPT, Llama models
+- [ ] **Event Bus Integration** - Complete AI events through Event Bus system
 
 ### **✅ Phase 5: Speech Synthesis (CORE COMPLETE - OUT OF ORDER)**
 - [x] **Speech Synthesis Service** - Core TTS service with Strategy pattern and Event Bus integration
