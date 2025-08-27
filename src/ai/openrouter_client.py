@@ -28,7 +28,7 @@ class OpenRouterClient:
         
         # Configuration
         ai_config = self.config.get_ai_config()
-        self.model = ai_config.get('model', 'anthropic/claude-3.5-haiku')
+        self.model = ai_config.get('model', 'anthropic/claude-3.5-sonnet')
         self.max_tokens = ai_config.get('max_tokens', 150)
         self.temperature = ai_config.get('temperature', 0.8)
         self.timeout = ai_config.get('timeout', 20)

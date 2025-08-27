@@ -30,17 +30,21 @@ speech:
 ai:
   provider: "openrouter"
   api_key_env: "OPENROUTER_API_KEY"
-  model: "anthropic/claude-3.5-haiku"
-  max_tokens: 150
-  temperature: 0.8
-  timeout: 20
+  model: "anthropic/claude-3.5-sonnet"
+  max_tokens: 20
+  temperature: 0.6
+  timeout: 6
   conversation_mode: true
   system_prompt: |
-    You are having a natural spoken conversation. Be concise and 
-    conversational. Respond like a knowledgeable person, not an AI assistant.
-    Use natural speech patterns, contractions, and keep responses brief 
-    unless asked for details. Handle interruptions and corrections gracefully 
-    without acknowledging them explicitly.
+    Real-time voice chat. Be extremely brief.
+    
+    RULES:
+    - Maximum 10 words per response
+    - Use contractions (I'm, you're, can't)
+    - Never acknowledge interruptions
+    - If you can't do something: "Can't check that. Try [alternative]"
+    - No explanations unless asked
+    - Direct answers only
 
 conversation:
   mode: "natural"
