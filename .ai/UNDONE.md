@@ -67,16 +67,18 @@ This document tracks the development roadmap for Astir, a natural conversation v
 - [x] **UML Design**: Class diagram with Strategy pattern and service relationships
 - [x] **Sequence Design**: Complete STT pipeline flow with error handling
 - [x] **API Specification**: Interface definitions and data structures
+- [x] **Strategy Implementation**: WhisperSTT strategy following the Strategy pattern
+- [x] **Core Service Implementation**: SpeechRecognitionService with Event Bus integration
+- [x] **Exception Handling**: STT-specific error classes and recovery patterns
 - [ ] **Model Loading**: Lazy loading of Whisper models (base/small/medium)
-- [ ] **Strategy Implementation**: WhisperSTT strategy following the Strategy pattern
 - [ ] **Real-time Processing**: Streaming audio to text conversion
 - [ ] **Language Detection**: Automatic language detection and configuration
 
 ### 3.2 Speech Recognition Service
-- [ ] **Transcription Pipeline**: Audio chunks to text with confidence scoring
-- [ ] **Context Awareness**: Conversation context for better accuracy
-- [ ] **Error Handling**: Fallback strategies for failed transcriptions
-- [ ] **Performance Tuning**: Optimize for speed vs accuracy based on use case
+- [x] **Transcription Pipeline**: Audio chunks to text with confidence scoring
+- [x] **Context Awareness**: Conversation context for better accuracy
+- [x] **Error Handling**: Fallback strategies for failed transcriptions
+- [x] **Performance Tuning**: Optimize for speed vs accuracy based on use case
 
 ### 3.3 Natural Speech Processing
 - [ ] **Punctuation Restoration**: Add natural punctuation to transcriptions
@@ -233,7 +235,7 @@ This document tracks the development roadmap for Astir, a natural conversation v
 4. ✅ **Build basic audio capture** service with VAD
 5. ✅ **Build audio output service** for TTS playback
 6. ✅ **Create service factory** for dependency injection
-7. 🔄 **Integrate Whisper STT** with strategy pattern (BDD Complete - Ready for Implementation)
+7. ✅ **Integrate Whisper STT** with strategy pattern (Core Implementation Complete)
 8. **Implement Coqui TTS** with voice synthesis
 
 ### 🔧 **TECHNICAL DEBT & IMPROVEMENTS**
@@ -264,4 +266,4 @@ The project will be considered successful when:
 
 ---
 
-*Last Updated: Service Factory Complete - Phase 2 Audio Processing Pipeline Complete! 🏭*
+*Last Updated: Whisper STT Strategy Complete - Core Speech Recognition Implementation! 🎤*

@@ -86,6 +86,11 @@ class TranscriptionError(SpeechRecognitionError):
     pass
 
 
+class LanguageDetectionError(SpeechRecognitionError):
+    """Raised when language detection fails."""
+    pass
+
+
 class ModelLoadError(SpeechRecognitionError):
     """Raised when STT model loading fails."""
     pass
