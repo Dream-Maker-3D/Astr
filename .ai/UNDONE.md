@@ -40,10 +40,10 @@ This document tracks the development roadmap for Astir, a natural conversation v
 - [x] **Continuous Listening**: Always-on audio capture without activation words
 
 ### 2.2 Audio Output Service  
-- [ ] **Speaker Output**: Audio playback with volume control and device selection
-- [ ] **Audio Queue Management**: Buffering and streaming for smooth playback
-- [ ] **Interruption Handling**: Immediate stop capability for natural conversation
-- [ ] **Audio Format Conversion**: Support multiple audio formats and sample rates
+- [x] **Speaker Output**: Audio playback with volume control and device selection
+- [x] **Audio Queue Management**: Buffering and streaming for smooth playback
+- [x] **Interruption Handling**: Immediate stop capability for natural conversation
+- [x] **Audio Format Conversion**: Support multiple audio formats and sample rates
 
 ### 2.3 Audio Pipeline Integration
 - [ ] **Event-Driven Flow**: Audio events through the event bus system
@@ -221,8 +221,9 @@ This document tracks the development roadmap for Astir, a natural conversation v
 2. ✅ **Implement core event bus** for component communication
 3. ✅ **Create configuration management** system with YAML support
 4. ✅ **Build basic audio capture** service with VAD
-5. **Build audio output service** for TTS playback
-6. **Integrate Whisper STT** with strategy pattern
+5. ✅ **Build audio output service** for TTS playback
+6. **Create service factory** for dependency injection
+7. **Integrate Whisper STT** with strategy pattern
 
 ### 🔧 **TECHNICAL DEBT & IMPROVEMENTS**
 - None yet - starting fresh!
@@ -252,4 +253,4 @@ The project will be considered successful when:
 
 ---
 
-*Last Updated: Audio Capture Service Complete - Voice Activity Detection Implemented! 🎤*
+*Last Updated: Audio Player Service Complete - TTS Playback with Queue Management Implemented! 🔊*
