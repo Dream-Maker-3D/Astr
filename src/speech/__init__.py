@@ -5,6 +5,7 @@ This package contains speech-to-text (STT) and text-to-speech (TTS) services
 that provide natural language processing capabilities for voice interactions.
 """
 
+# Speech Recognition (STT)
 from .recognition_service import (
     SpeechRecognitionService,
     TranscriptionResult,
@@ -19,7 +20,18 @@ from .strategies import (
     WhisperSTTStrategy
 )
 
+# Speech Synthesis (TTS)
+from .synthesis_service import SpeechSynthesisService
+from .strategies.base_synthesis import (
+    ISpeechSynthesis, SynthesisResult, SynthesisRequest, AudioChunk,
+    VoiceInfo, VoiceParameters, TTSCapabilities, TTSStatistics,
+    Priority, TTSEventTypes, SpeechConfig, AudioFormat,
+    SynthesisMetadata
+)
+from .strategies.coqui_tts import CoquiTTSStrategy
+
 __all__ = [
+    # Speech Recognition
     'SpeechRecognitionService',
     'TranscriptionResult',
     'PartialResult', 
@@ -27,5 +39,22 @@ __all__ = [
     'STTCapabilities',
     'STTStatistics',
     'ISpeechRecognition',
-    'WhisperSTTStrategy'
+    'WhisperSTTStrategy',
+    
+    # Speech Synthesis
+    'SpeechSynthesisService',
+    'ISpeechSynthesis',
+    'SynthesisResult',
+    'SynthesisRequest',
+    'AudioChunk',
+    'VoiceInfo',
+    'VoiceParameters',
+    'TTSCapabilities',
+    'TTSStatistics',
+    'Priority',
+    'TTSEventTypes',
+    'SpeechConfig',
+    'AudioFormat',
+    'SynthesisMetadata',
+    'CoquiTTSStrategy'
 ]

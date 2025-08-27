@@ -91,6 +91,37 @@ class LanguageDetectionError(SpeechRecognitionError):
     pass
 
 
+# Speech Synthesis Exceptions
+class SpeechSynthesisError(AstirError):
+    """Base exception for speech synthesis errors."""
+    pass
+
+
+class ModelLoadError(SpeechSynthesisError):
+    """Raised when TTS model fails to load."""
+    pass
+
+
+class VoiceNotFoundError(SpeechSynthesisError):
+    """Raised when requested voice is not available."""
+    pass
+
+
+class SynthesisTimeoutError(SpeechSynthesisError):
+    """Raised when synthesis takes too long."""
+    pass
+
+
+class AudioGenerationError(SpeechSynthesisError):
+    """Raised when audio generation fails."""
+    pass
+
+
+class VoiceCloningError(SpeechSynthesisError):
+    """Raised when voice cloning fails."""
+    pass
+
+
 class ModelLoadError(SpeechRecognitionError):
     """Raised when STT model loading fails."""
     pass
