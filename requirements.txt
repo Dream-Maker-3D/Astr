@@ -1,0 +1,35 @@
+# Core audio processing
+pyaudio>=0.2.11
+sounddevice>=0.4.6
+soundfile>=0.12.1
+librosa>=0.10.1
+
+# Speech recognition
+openai-whisper>=20231117
+faster-whisper>=0.10.0
+
+# Text-to-speech
+coqui-tts>=0.22.0
+
+# AI integration
+openai>=1.0.0
+
+# Utilities
+numpy>=1.24.0
+scipy>=1.10.0
+pyyaml>=6.0
+python-dotenv>=1.0.0
+asyncio-mqtt>=0.16.0
+
+# Event system and concurrency
+asyncio>=3.4.3
+threading>=3.4.3
+queue>=3.4.3
+
+# Logging and monitoring
+structlog>=23.1.0
+colorlog>=6.7.0
+
+# Configuration and validation
+pydantic>=2.0.0
+marshmallow>=3.19.0
