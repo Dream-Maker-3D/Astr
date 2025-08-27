@@ -1,0 +1,288 @@
+@startuml AI Conversation Processing Pipeline
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 150
+
+title AI Conversation Processing Pipeline Flow
+
+actor User
+participant "Audio Capture\nService" as AudioCapture
+participant "Speech Recognition\nService" as STT
+participant "Event Bus\nService" as EventBus
+participant "AI Conversation\nService" as AIService
+participant "OpenRouter\nClient" as OpenRouter
+participant "Conversation\nManager" as ConvManager
+participant "Speech Synthesis\nService" as TTS
+participant "Audio Player\nService" as AudioPlayer
+
+== Initialization Phase ==
+
+User -> AIService : initialize()
+activate AIService
+
+AIService -> OpenRouter : initialize()
+activate OpenRouter
+OpenRouter -> OpenRouter : validate_api_key()
+OpenRouter -> OpenRouter : load_model_configs()
+OpenRouter --> AIService : client_ready
+deactivate OpenRouter
+
+AIService -> ConvManager : initialize()
+activate ConvManager
+ConvManager -> ConvManager : load_system_prompt()
+ConvManager -> ConvManager : setup_context_window()
+ConvManager --> AIService : manager_ready
+deactivate ConvManager
+
+AIService -> EventBus : subscribe("TRANSCRIPTION_READY", handle_transcription)
+AIService -> EventBus : subscribe("AI_INTERRUPTION", handle_interruption)
+
+AIService --> User : service_ready
+deactivate AIService
+
+== Natural Conversation Flow ==
+
+User -> User : speaks naturally
+note right : "What's the weather like today?"
+
+AudioCapture -> STT : audio_data
+activate STT
+STT -> STT : transcribe_audio()
+STT -> EventBus : publish("TRANSCRIPTION_READY", {\n  text: "What's the weather like today?",\n  confidence: 0.95,\n  timestamp: t1\n})
+deactivate STT
+
+EventBus -> AIService : handle_transcription(transcription_data)
+activate AIService
+
+AIService -> EventBus : publish("AI_PROCESSING_STARTED", {\n  user_input: "What's the weather like today?",\n  model: "claude-3-5-sonnet",\n  timestamp: t1\n})
+
+== Context Preparation ==
+
+AIService -> ConvManager : add_user_turn("What's the weather like today?")
+activate ConvManager
+
+ConvManager -> ConvManager : create_conversation_turn()
+ConvManager -> ConvManager : update_conversation_state(PROCESSING)
+ConvManager -> ConvManager : check_context_window()
+
+ConvManager -> ConvManager : get_context_messages()
+note right : Prepare conversation history\nfor AI model context
+
+ConvManager --> AIService : context_messages
+deactivate ConvManager
+
+== OpenRouter API Processing ==
+
+AIService -> OpenRouter : generate_response(messages, stream=true)
+activate OpenRouter
+
+OpenRouter -> OpenRouter : prepare_messages()
+OpenRouter -> OpenRouter : apply_rate_limiting()
+
+note over OpenRouter : OpenRouter API Call:\n- Model: claude-3-5-sonnet\n- Stream: enabled\n- Context: conversation history\n- System prompt: natural conversation
+
+OpenRouter -> OpenRouter : call_openrouter_api()
+
+note over OpenRouter : Streaming Response Processing:\n- Receive response chunks\n- Assemble complete response\n- Handle streaming events
+
+loop Streaming Response Chunks
+    OpenRouter --> AIService : response_chunk
+    AIService -> EventBus : publish("AI_RESPONSE_CHUNK", {\n      chunk_text: "It's sunny",\n      chunk_id: "chunk_1",\n      is_final: false\n    })
+end
+
+OpenRouter --> AIService : complete_response
+deactivate OpenRouter
+
+== Response Processing ==
+
+AIService -> AIService : format_response_for_tts()
+note right : Process AI response:\n- Remove markdown formatting\n- Add natural pauses\n- Optimize for speech synthesis
+
+AIService -> ConvManager : add_assistant_turn(response_text)
+activate ConvManager
+ConvManager -> ConvManager : update_conversation_history()
+ConvManager -> ConvManager : update_conversation_state(RESPONDING)
+ConvManager --> AIService : turn_added
+deactivate ConvManager
+
+AIService -> EventBus : publish("AI_RESPONSE_READY", {\n  text: "It's sunny and 75 degrees today.",\n  model_used: "claude-3-5-sonnet",\n  processing_time: 1.2s,\n  token_count: 156,\n  timestamp: t2\n})
+
+AIService -> AIService : update_statistics()
+AIService --> User : processing_complete
+deactivate AIService
+
+== Speech Synthesis Integration ==
+
+EventBus -> TTS : handle_ai_response(response_data)
+activate TTS
+
+TTS -> TTS : queue_synthesis_request()
+TTS -> TTS : synthesize_text("It's sunny and 75 degrees today.")
+
+TTS -> AudioPlayer : queue_audio(synthesized_audio)
+activate AudioPlayer
+AudioPlayer -> AudioPlayer : play_audio()
+note over AudioPlayer : Playing AI response:\n"It's sunny and 75 degrees today."
+AudioPlayer --> User : audio_output
+deactivate AudioPlayer
+
+TTS -> EventBus : publish("SYNTHESIS_COMPLETED", synthesis_result)
+deactivate TTS
+
+== Conversation Continuation ==
+
+User -> User : continues conversation
+note right : "Should I wear a jacket?"
+
+AudioCapture -> STT : new_audio_data
+activate STT
+STT -> EventBus : publish("TRANSCRIPTION_READY", {\n  text: "Should I wear a jacket?",\n  confidence: 0.92\n})
+deactivate STT
+
+EventBus -> AIService : handle_transcription(new_transcription)
+activate AIService
+
+AIService -> ConvManager : add_user_turn("Should I wear a jacket?")
+activate ConvManager
+
+ConvManager -> ConvManager : maintain_conversation_context()
+note right : Context includes:\n- Previous weather question\n- AI's response about sunny weather\n- Current jacket question
+
+ConvManager --> AIService : contextual_messages
+deactivate ConvManager
+
+AIService -> OpenRouter : generate_response(contextual_messages)
+activate OpenRouter
+
+note over OpenRouter : Contextual AI Processing:\n- Understands "jacket" relates to weather\n- Considers previous "sunny and 75°" response\n- Generates contextually appropriate answer
+
+OpenRouter --> AIService : "With 75 degrees and sunny weather, you probably won't need a jacket."
+deactivate OpenRouter
+
+AIService -> EventBus : publish("AI_RESPONSE_READY", contextual_response)
+deactivate AIService
+
+== Interruption Handling Flow ==
+
+note over User, AudioPlayer : Interruption Scenario
+
+AudioCapture -> STT : user_speaking_detected
+STT -> EventBus : publish("USER_SPEAKING_STARTED")
+
+EventBus -> AIService : handle_interruption()
+activate AIService
+AIService -> OpenRouter : cancel_current_request()
+activate OpenRouter
+OpenRouter -> OpenRouter : stop_generation()
+OpenRouter --> AIService : request_cancelled
+deactivate OpenRouter
+
+AIService -> EventBus : publish("AI_RESPONSE_INTERRUPTED", {\n  reason: "user_interruption",\n  partial_response: "With 75 degrees...",\n  timestamp: t3\n})
+
+AIService -> ConvManager : preserve_conversation_state()
+activate ConvManager
+ConvManager -> ConvManager : mark_interrupted_turn()
+ConvManager --> AIService : state_preserved
+deactivate ConvManager
+
+AIService --> User : ready_for_new_input
+deactivate AIService
+
+EventBus -> TTS : handle_interruption()
+activate TTS
+TTS -> TTS : stop_current_synthesis()
+TTS -> AudioPlayer : clear_audio_queue()
+TTS --> EventBus : synthesis_stopped
+deactivate TTS
+
+== Error Handling Flow ==
+
+note over User, AudioPlayer : Error Handling Scenarios
+
+AIService -> OpenRouter : generate_response(messages)
+activate OpenRouter
+OpenRouter -> OpenRouter : call_api()
+OpenRouter --> AIService : APIError("Rate limit exceeded")
+deactivate OpenRouter
+
+AIService -> AIService : handle_api_error()
+activate AIService
+
+alt Rate Limit Error
+    AIService -> AIService : apply_exponential_backoff()
+    AIService -> EventBus : publish("AI_RATE_LIMIT_HIT", {\n      wait_time: 60s,\n      retry_after: t4\n    })
+    
+    AIService -> AIService : wait_and_retry()
+    
+else Authentication Error
+    AIService -> EventBus : publish("AI_ERROR", {\n      error_type: "authentication_failed",\n      message: "Invalid API key",\n      recovery_action: "check_credentials"\n    })
+    
+    AIService -> AIService : use_fallback_response()
+    
+else Model Unavailable
+    AIService -> AIService : switch_to_backup_model()
+    AIService -> OpenRouter : set_model("gpt-4-turbo")
+    AIService -> AIService : retry_request()
+end
+
+deactivate AIService
+
+== Context Window Management ==
+
+note over AIService, ConvManager : Long Conversation Scenario
+
+ConvManager -> ConvManager : check_context_window()
+note right : Context approaching limit:\n190k tokens used of 200k limit
+
+ConvManager -> ConvManager : trigger_summarization()
+activate ConvManager
+
+ConvManager -> OpenRouter : summarize_conversation(older_turns)
+activate OpenRouter
+OpenRouter --> ConvManager : conversation_summary
+deactivate OpenRouter
+
+ConvManager -> ConvManager : replace_old_turns_with_summary()
+ConvManager -> ConvManager : optimize_context_window()
+
+ConvManager -> EventBus : publish("AI_CONTEXT_SUMMARIZED", {\n  summary_length: 500,\n  tokens_saved: 15000,\n  turns_summarized: 20\n})
+
+ConvManager --> AIService : context_optimized
+deactivate ConvManager
+
+== Model Switching Flow ==
+
+User -> AIService : switch_model("gpt-4-turbo")
+activate AIService
+
+AIService -> OpenRouter : validate_model("gpt-4-turbo")
+activate OpenRouter
+OpenRouter -> OpenRouter : check_model_availability()
+OpenRouter --> AIService : model_valid
+deactivate OpenRouter
+
+AIService -> OpenRouter : set_model("gpt-4-turbo")
+AIService -> ConvManager : preserve_conversation_context()
+
+AIService -> EventBus : publish("AI_MODEL_CHANGED", {\n  old_model: "claude-3-5-sonnet",\n  new_model: "gpt-4-turbo",\n  reason: "user_request",\n  timestamp: t5\n})
+
+AIService --> User : model_switched
+deactivate AIService
+
+== Performance Monitoring ==
+
+note over AIService : Continuous Performance Tracking
+
+AIService -> AIService : track_metrics({\n  response_time: 1.2s,\n  token_usage: 156,\n  model_used: "claude-3-5-sonnet",\n  success: true\n})
+
+alt Performance Degradation Detected
+    AIService -> EventBus : publish("AI_PERFORMANCE_WARNING", {\n      metric: "response_time",\n      current_value: 3.5s,\n      threshold: 2.0s,\n      recommendation: "consider_model_switch"\n    })
+end
+
+== Statistics and Monitoring ==
+
+AIService -> AIService : update_statistics({\n  total_requests: 1247,\n  average_response_time: 1.4s,\n  total_tokens_used: 892456,\n  error_rate: 0.02,\n  uptime: 3600s\n})
+
+note over AIService : Real-time Statistics:\n- Total conversations: 1247\n- Average response time: 1.4s\n- Token usage: 892k\n- Error rate: 2%\n- Model distribution tracking
+
+@enduml

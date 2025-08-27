@@ -1,0 +1,365 @@
+@startuml AI Conversation Class Diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageFontSize 14
+
+package "AI Conversation System" {
+    
+    ' Main Service Class
+    class AIConversationService {
+        -_event_bus: EventBusService
+        -_config: AIConfig
+        -_openrouter_client: OpenRouterClient
+        -_conversation_manager: ConversationManager
+        -_is_initialized: bool
+        -_current_model: str
+        -_conversation_history: List[ConversationTurn]
+        -_processing_queue: Queue[ConversationRequest]
+        -_worker_thread: Thread
+        -_statistics: AIStatistics
+        -_rate_limiter: RateLimiter
+        
+        +initialize() : bool
+        +process_message(text: str, context: ConversationContext) : str
+        +process_message_stream(text: str, context: ConversationContext) : Iterator[ResponseChunk]
+        +switch_model(model_name: str) : bool
+        +get_conversation_history() : List[ConversationTurn]
+        +clear_conversation() : void
+        +get_statistics() : AIStatistics
+        +shutdown() : void
+        
+        -_process_conversation_worker() : void
+        -_handle_conversation_request(request: ConversationRequest) : void
+        -_format_response_for_tts(response: str) : str
+        -_manage_context_window() : void
+        -_publish_events(event_type: str, data: dict) : void
+    }
+    
+    ' OpenRouter Client
+    class OpenRouterClient {
+        -_api_key: str
+        -_base_url: str
+        -_client: OpenAI
+        -_current_model: str
+        -_model_configs: Dict[str, ModelConfig]
+        -_retry_config: RetryConfig
+        
+        +initialize() : bool
+        +set_model(model_name: str) : void
+        +generate_response(messages: List[Message], stream: bool) : Union[str, Iterator[str]]
+        +get_available_models() : List[ModelInfo]
+        +validate_api_key() : bool
+        +get_model_info(model_name: str) : ModelInfo
+        +shutdown() : void
+        
+        -_prepare_messages(messages: List[Message]) : List[dict]
+        -_handle_api_error(error: Exception) : void
+        -_apply_rate_limiting() : void
+    }
+    
+    ' Conversation Manager
+    class ConversationManager {
+        -_conversation_history: List[ConversationTurn]
+        -_context_window_limit: int
+        -_system_prompt: str
+        -_conversation_state: ConversationState
+        -_memory_manager: MemoryManager
+        
+        +add_turn(turn: ConversationTurn) : void
+        +get_context_messages() : List[Message]
+        +summarize_history() : str
+        +clear_history() : void
+        +set_system_prompt(prompt: str) : void
+        +get_conversation_state() : ConversationState
+        +manage_context_window() : void
+        
+        -_calculate_token_count(text: str) : int
+        -_create_summary(turns: List[ConversationTurn]) : str
+        -_optimize_context() : void
+    }
+    
+    ' Rate Limiter
+    class RateLimiter {
+        -_requests_per_minute: int
+        -_requests_per_hour: int
+        -_request_history: List[datetime]
+        -_lock: threading.Lock
+        
+        +can_make_request() : bool
+        +record_request() : void
+        +get_wait_time() : float
+        +reset() : void
+        
+        -_cleanup_old_requests() : void
+        -_check_rate_limits() : bool
+    }
+    
+    ' Memory Manager
+    class MemoryManager {
+        -_short_term_memory: List[ConversationTurn]
+        -_long_term_memory: Dict[str, Any]
+        -_memory_limit: int
+        
+        +store_turn(turn: ConversationTurn) : void
+        +retrieve_relevant_context(query: str) : List[ConversationTurn]
+        +summarize_session() : str
+        +clear_memory() : void
+        
+        -_calculate_relevance(turn: ConversationTurn, query: str) : float
+        -_compress_memory() : void
+    }
+}
+
+package "Data Classes" {
+    class ConversationRequest {
+        +text: str
+        +context: ConversationContext
+        +priority: Priority
+        +request_id: str
+        +timestamp: datetime
+        +streaming: bool
+        
+        +to_dict() : dict
+    }
+    
+    class ConversationResponse {
+        +text: str
+        +model_used: str
+        +processing_time: float
+        +token_count: int
+        +confidence: float
+        +metadata: ResponseMetadata
+        +request_id: str
+        
+        +format_for_tts() : str
+    }
+    
+    class ResponseChunk {
+        +chunk_text: str
+        +chunk_id: str
+        +is_final: bool
+        +timestamp: float
+        +model_used: str
+        
+        +merge_with(other: ResponseChunk) : ResponseChunk
+    }
+    
+    class ConversationTurn {
+        +speaker: Speaker
+        +message: str
+        +timestamp: datetime
+        +metadata: TurnMetadata
+        +turn_id: str
+        
+        +to_message() : Message
+        +get_token_count() : int
+    }
+    
+    class ConversationContext {
+        +conversation_id: str
+        +user_id: str
+        +session_start: datetime
+        +context_data: Dict[str, Any]
+        +preferences: UserPreferences
+        
+        +update_context(data: dict) : void
+        +get_context_summary() : str
+    }
+    
+    class Message {
+        +role: MessageRole
+        +content: str
+        +timestamp: datetime
+        +metadata: Dict[str, Any]
+        
+        +to_openai_format() : dict
+    }
+    
+    class ModelConfig {
+        +model_name: str
+        +provider: str
+        +context_window: int
+        +max_tokens: int
+        +temperature: float
+        +top_p: float
+        +supports_streaming: bool
+        +cost_per_token: float
+        
+        +validate() : bool
+        +to_dict() : dict
+    }
+    
+    class ModelInfo {
+        +name: str
+        +provider: str
+        +description: str
+        +capabilities: List[str]
+        +context_window: int
+        +is_available: bool
+        
+        +supports_feature(feature: str) : bool
+    }
+    
+    class AIStatistics {
+        +total_requests: int
+        +average_response_time: float
+        +total_tokens_used: int
+        +model_usage_distribution: Dict[str, int]
+        +error_count: int
+        +uptime: float
+        +rate_limit_hits: int
+        
+        +get_performance_metrics() : dict
+        +get_cost_estimate() : float
+    }
+    
+    enum Speaker {
+        USER
+        ASSISTANT
+        SYSTEM
+    }
+    
+    enum MessageRole {
+        USER
+        ASSISTANT
+        SYSTEM
+    }
+    
+    enum ConversationState {
+        IDLE
+        LISTENING
+        PROCESSING
+        RESPONDING
+        INTERRUPTED
+        ERROR
+    }
+    
+    enum Priority {
+        LOW
+        NORMAL
+        HIGH
+        URGENT
+    }
+    
+    class ResponseMetadata {
+        +model_name: str
+        +processing_device: str
+        +token_usage: TokenUsage
+        +quality_metrics: Dict[str, float]
+        +generation_timestamp: datetime
+    }
+    
+    class TokenUsage {
+        +prompt_tokens: int
+        +completion_tokens: int
+        +total_tokens: int
+        +estimated_cost: float
+    }
+    
+    class UserPreferences {
+        +response_style: str
+        +verbosity_level: str
+        +preferred_models: List[str]
+        +conversation_topics: List[str]
+        
+        +update_preference(key: str, value: Any) : void
+    }
+    
+    class RetryConfig {
+        +max_retries: int
+        +base_delay: float
+        +max_delay: float
+        +exponential_base: float
+        +jitter: bool
+        
+        +get_delay(attempt: int) : float
+    }
+}
+
+package "Configuration" {
+    class AIConfig {
+        +default_model: str
+        +api_key: str
+        +base_url: str
+        +max_tokens: int
+        +temperature: float
+        +context_window_limit: int
+        +streaming_enabled: bool
+        +retry_attempts: int
+        +timeout_seconds: float
+        +rate_limit_rpm: int
+        +rate_limit_rph: int
+        +system_prompt: str
+        
+        +validate() : bool
+        +get_model_config(model_name: str) : ModelConfig
+    }
+}
+
+package "Event Types" {
+    class AIEventTypes {
+        +AI_PROCESSING_STARTED: str
+        +AI_RESPONSE_CHUNK: str
+        +AI_RESPONSE_READY: str
+        +AI_RESPONSE_INTERRUPTED: str
+        +AI_MODEL_CHANGED: str
+        +AI_ERROR: str
+        +AI_CONTEXT_SUMMARIZED: str
+        +AI_RATE_LIMIT_HIT: str
+        +AI_SERVICE_INITIALIZED: str
+        +AI_SERVICE_SHUTDOWN: str
+    }
+}
+
+package "External Dependencies" {
+    class OpenAI {
+        +api_key: str
+        +base_url: str
+        
+        +chat.completions.create() : ChatCompletion
+    }
+}
+
+package "Core Services" {
+    class EventBusService {
+        +publish(event_type: str, data: dict) : void
+        +subscribe(event_type: str, handler: Callable) : void
+    }
+    
+    class ConfigurationManager {
+        +get_ai_config() : AIConfig
+    }
+}
+
+' Relationships
+AIConversationService --> OpenRouterClient : uses
+AIConversationService --> ConversationManager : manages
+AIConversationService --> RateLimiter : enforces limits
+AIConversationService --> EventBusService : publishes to
+AIConversationService --> ConfigurationManager : gets config from
+
+OpenRouterClient --> OpenAI : uses
+OpenRouterClient --> ModelConfig : configured with
+OpenRouterClient --> RetryConfig : uses for retries
+
+ConversationManager --> MemoryManager : uses
+ConversationManager --> ConversationTurn : manages
+ConversationManager --> Message : creates
+
+AIConversationService --> ConversationRequest : processes
+AIConversationService --> ConversationResponse : produces
+AIConversationService --> AIStatistics : maintains
+
+ConversationTurn --> Message : converts to
+ConversationContext --> UserPreferences : contains
+ConversationResponse --> ResponseMetadata : includes
+ResponseMetadata --> TokenUsage : tracks
+
+' Notes
+note right of AIConversationService : Main orchestrator for AI conversations\nManages OpenRouter integration and context
+note bottom of OpenRouterClient : Handles OpenRouter API communication\nSupports multiple models (Claude, GPT, Llama)
+note left of ConversationManager : Manages conversation history and context\nHandles context window optimization
+note right of RateLimiter : Enforces API rate limits\nPrevents quota exhaustion
+
+@enduml

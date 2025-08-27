@@ -89,9 +89,12 @@ This document tracks the development roadmap for Astir, a natural conversation v
 ---
 
 ## 🤖 **PHASE 4: AI Integration (OpenRouter)**
-*Status: 🔴 Not Started*
+*Status: 🔄 In Progress - BDD Planning Complete*
 
 ### 4.1 OpenRouter Client Implementation
+- [x] **BDD Planning**: Comprehensive Gherkin scenarios for AI service (20 scenarios)
+- [x] **UML Design**: Class diagram with OpenRouter integration and conversation management
+- [x] **Sequence Design**: Complete AI pipeline flow with streaming and error handling
 - [ ] **API Client**: OpenRouter-compatible client using OpenAI SDK
 - [ ] **Model Selection**: Support for Claude, GPT, Llama models via OpenRouter
 - [ ] **Streaming Responses**: Real-time response streaming for natural conversation
@@ -275,4 +278,4 @@ The project will be considered successful when:
 
 ---
 
-*Last Updated: Coqui TTS Core Implementation Complete - Speech Synthesis Architecture Ready! 🎵*
+*Last Updated: AI Integration BDD Planning Complete - Ready for OpenRouter Implementation! 🤖*
