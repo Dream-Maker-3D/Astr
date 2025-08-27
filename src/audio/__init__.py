@@ -7,10 +7,16 @@ that provide the foundation for voice interaction.
 
 # Audio services
 from .capture_service import AudioCaptureService, AudioDevice, AudioData, VoiceActivityDetector
+from .player_service import AudioPlayerService, AudioOutputDevice, AudioClip, PlaybackPriority, AudioQueue
 
 __all__ = [
     'AudioCaptureService',
     'AudioDevice', 
     'AudioData',
-    'VoiceActivityDetector'
+    'VoiceActivityDetector',
+    'AudioPlayerService',
+    'AudioOutputDevice',
+    'AudioClip',
+    'PlaybackPriority',
+    'AudioQueue'
 ]

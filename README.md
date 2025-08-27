@@ -8,14 +8,15 @@ A natural conversation voice assistant built with Python, OpenRouter AI, Whisper
 - **Event Bus Service** - Observer pattern implementation for decoupled communication
 - **Configuration Manager** - Singleton pattern for centralized configuration management
 - **Audio Capture Service** - Continuous voice input with Voice Activity Detection
+- **Audio Player Service** - TTS audio playback with queue management and interruption handling
 - **Exception Hierarchy** - Comprehensive error handling system
 - **Project Structure** - Clean architecture following SOLID principles
 - **Unit Tests** - Comprehensive test coverage for core services
 - **BDD Planning** - Complete feature specifications and design documents
 
 ### 🔄 **In Progress:**
-- Audio Player Service (Strategy pattern)
 - Service Factory (Factory pattern)
+- Speech Recognition Service (Strategy pattern)
 
 ### 📋 **Next Phase:**
 - Audio Processing Pipeline
@@ -128,7 +129,7 @@ pytest tests/unit/core/test_event_bus.py::TestEventBusPerformance -v
 
 ### **🔄 Phase 2: Audio Processing (IN PROGRESS)**
 - [x] **Audio Capture Service** - Microphone input with VAD
-- [ ] **Audio Output Service** - Speaker output management
+- [x] **Audio Player Service** - Speaker output management with queue system
 - [ ] **Service Factory** - Factory pattern for service instantiation
 
 ### **📋 Phase 3: Speech Processing (PLANNED)**
