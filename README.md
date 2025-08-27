@@ -2,21 +2,22 @@
 
 A natural conversation voice assistant built with Python, OpenRouter AI, Whisper STT, and Coqui TTS using Gang of Four design patterns and Behavior-Driven Development (BDD) methodology.
 
-## 🚀 **Current Status: Phase 2 - Audio Processing**
+## 🚀 **Current Status: Phase 3 - Speech Processing**
 
 ### ✅ **Completed Components:**
 - **Event Bus Service** - Observer pattern implementation for decoupled communication
 - **Configuration Manager** - Singleton pattern for centralized configuration management
 - **Audio Capture Service** - Continuous voice input with Voice Activity Detection
 - **Audio Player Service** - TTS audio playback with queue management and interruption handling
+- **Service Factory** - Factory pattern for dependency injection and service lifecycle management
 - **Exception Hierarchy** - Comprehensive error handling system
 - **Project Structure** - Clean architecture following SOLID principles
 - **Unit Tests** - Comprehensive test coverage for core services
 - **BDD Planning** - Complete feature specifications and design documents
 
 ### 🔄 **In Progress:**
-- Service Factory (Factory pattern)
 - Speech Recognition Service (Strategy pattern)
+- Speech Synthesis Service (Strategy pattern)
 
 ### 📋 **Next Phase:**
 - Audio Processing Pipeline
@@ -127,10 +128,10 @@ pytest tests/unit/core/test_event_bus.py::TestEventBusPerformance -v
 - [x] **Unit Tests** - Comprehensive test coverage
 - [x] **Main Entry Point** - Basic application startup
 
-### **🔄 Phase 2: Audio Processing (IN PROGRESS)**
+### **✅ Phase 2: Audio Processing (COMPLETED)**
 - [x] **Audio Capture Service** - Microphone input with VAD
 - [x] **Audio Player Service** - Speaker output management with queue system
-- [ ] **Service Factory** - Factory pattern for service instantiation
+- [x] **Service Factory** - Factory pattern for service instantiation and dependency injection
 
 ### **📋 Phase 3: Speech Processing (PLANNED)**
 - [ ] **Speech Recognition Service** - Whisper STT integration

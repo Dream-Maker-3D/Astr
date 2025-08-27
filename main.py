@@ -16,7 +16,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.core.event_bus import EventBusService, EventTypes
-from src.core.config_manager import config_manager
+from src.core.config_manager import config_manager, AudioConfig
+from src.core.service_factory import ServiceFactory, ServiceMetadata, ServiceLifetime
 from src.audio.capture_service import AudioCaptureService
 from src.audio.player_service import AudioPlayerService, PlaybackPriority
 from src.utils.exceptions import AstirError, InitializationError
@@ -77,7 +78,36 @@ def main():
         event_bus.initialize()
         logger.info("✅ Event Bus initialized")
         
-        # Initialize Audio Services
+        # Initialize Service Factory
+        service_factory = ServiceFactory(event_bus, config_manager)
+        service_factory.initialize()
+        logger.info("✅ Service Factory initialized")
+        
+        # Register services with factory
+        service_factory.register(EventBusService, ServiceMetadata(
+            service_type=EventBusService,
+            lifetime=ServiceLifetime.SINGLETON,
+            description="Event bus for system communication"
+        ))
+        
+        service_factory.register(AudioCaptureService, ServiceMetadata(
+            service_type=AudioCaptureService,
+            lifetime=ServiceLifetime.SINGLETON,
+            dependencies=[EventBusService, AudioConfig],
+            description="Audio capture service with voice activity detection"
+        ))
+        
+        service_factory.register(AudioPlayerService, ServiceMetadata(
+            service_type=AudioPlayerService,
+            lifetime=ServiceLifetime.SINGLETON,
+            dependencies=[EventBusService, AudioConfig],
+            description="Audio player service with queue management"
+        ))
+        
+        logger.info("✅ Services registered with factory")
+        
+        # Create services through factory (for demonstration)
+        # Note: For now, we'll still create them directly to maintain compatibility
         audio_capture = AudioCaptureService(event_bus, config.audio)
         audio_capture.initialize()
         logger.info("✅ Audio Capture Service initialized")
@@ -155,6 +185,11 @@ def main():
         logger.info(f"   - Event subscriptions: {eb_stats.active_subscriptions}")
         logger.info(f"   - Worker threads: {event_bus._worker_threads}")
         
+        # Service Factory Statistics
+        factory_stats = service_factory.get_statistics()
+        logger.info(f"   - Registered services: {factory_stats.total_services_registered}")
+        logger.info(f"   - Created instances: {factory_stats.total_instances_created}")
+        
         # Audio Services Statistics
         capture_stats = audio_capture.get_statistics()
         player_stats = audio_player.get_statistics()
@@ -196,6 +231,7 @@ def main():
             })
             audio_capture.shutdown()
             audio_player.shutdown()
+            service_factory.shutdown()
             event_bus.shutdown()
             logger.info("✅ Cleanup completed")
         except:
