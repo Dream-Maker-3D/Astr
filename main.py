@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.core.event_bus import EventBusService, EventTypes
 from src.core.config_manager import config_manager
+from src.audio.capture_service import AudioCaptureService
 from src.utils.exceptions import AstirError, InitializationError
 
 
@@ -75,16 +76,35 @@ def main():
         event_bus.initialize()
         logger.info("✅ Event Bus initialized")
         
-        # Set up event handlers for demonstration
+        # Initialize Audio Capture Service
+        audio_service = AudioCaptureService(event_bus, config.audio)
+        audio_service.initialize()
+        logger.info("✅ Audio Capture Service initialized")
+        
+        # Set up event handlers
         def system_ready_handler(data):
             logger.info(f"🎉 System ready: {data}")
         
         def system_shutdown_handler(data):
             logger.info(f"🛑 System shutdown: {data}")
         
-        # Subscribe to system events
+        def audio_data_handler(data):
+            if data.get('status') == 'capture_started':
+                logger.info(f"🎤 Audio capture started: {data.get('device', 'unknown')}")
+        
+        def speech_detected_handler(data):
+            logger.info(f"🗣️  Speech detected: RMS={data.get('rms_level', 0):.4f}")
+        
+        def speech_ended_handler(data):
+            duration = data.get('duration_seconds', 0)
+            logger.info(f"🔇 Speech ended: {duration:.2f}s")
+        
+        # Subscribe to events
         event_bus.subscribe(EventTypes.SYSTEM_READY, system_ready_handler)
         event_bus.subscribe(EventTypes.SYSTEM_SHUTDOWN, system_shutdown_handler)
+        event_bus.subscribe(EventTypes.AUDIO_DATA_RECEIVED, audio_data_handler)
+        event_bus.subscribe(EventTypes.SPEECH_DETECTED, speech_detected_handler)
+        event_bus.subscribe(EventTypes.SPEECH_ENDED, speech_ended_handler)
         
         logger.info("✅ Event handlers registered")
         
@@ -92,11 +112,24 @@ def main():
         # This will be implemented in subsequent phases
         
         logger.info("🎤 Voice Assistant is ready!")
-        logger.info("📊 Event Bus Statistics:")
-        stats = event_bus.get_statistics()
-        logger.info(f"   - Active subscriptions: {stats.active_subscriptions}")
+        logger.info("📊 System Statistics:")
+        
+        # Event Bus Statistics
+        eb_stats = event_bus.get_statistics()
+        logger.info(f"   - Event subscriptions: {eb_stats.active_subscriptions}")
         logger.info(f"   - Worker threads: {event_bus._worker_threads}")
-        logger.info(f"   - Queue size: {stats.queue_size}")
+        
+        # Audio Service Statistics
+        audio_stats = audio_service.get_statistics()
+        logger.info(f"   - Audio device: {audio_stats.get('selected_device', 'None')}")
+        logger.info(f"   - Audio ready: {audio_stats.get('is_capturing', False)}")
+        
+        # Start audio capture for demonstration
+        try:
+            audio_service.start_capture()
+            logger.info("🎧 Audio capture started - listening for speech...")
+        except Exception as e:
+            logger.warning(f"⚠️  Audio capture not available: {e}")
         
         # Keep the application running
         try:
@@ -121,6 +154,7 @@ def main():
                 "reason": "Application shutdown",
                 "timestamp": "now"
             })
+            audio_service.shutdown()
             event_bus.shutdown()
             logger.info("✅ Cleanup completed")
         except:
