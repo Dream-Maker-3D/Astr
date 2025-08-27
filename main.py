@@ -1,241 +1,230 @@
 #!/usr/bin/env python3
 """
-Astir Voice Assistant - Main Entry Point
+Astir Voice Assistant - Main Entry Point.
 
-A natural conversation voice assistant built with Python, OpenRouter AI,
-Whisper STT, and Coqui TTS using Gang of Four design patterns and BDD methodology.
+This is the main entry point for the Astir Voice Assistant system,
+providing natural voice conversations using the complete pipeline:
+Audio Input → STT (Whisper) → AI (OpenRouter) → TTS (Coqui) → Audio Output
 """
 
 import os
 import sys
 import logging
-import asyncio
+import signal
+import time
 from pathlib import Path
+from typing import Optional
 
-# Add src to Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# Add src to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from src.core.event_bus import EventBusService, EventTypes
-from src.core.config_manager import config_manager, AudioConfig
-from src.core.service_factory import ServiceFactory, ServiceMetadata, ServiceLifetime
-from src.audio.capture_service import AudioCaptureService
-from src.audio.player_service import AudioPlayerService, PlaybackPriority
-from src.utils.exceptions import AstirError, InitializationError
+from src.core.facade import VoiceAssistantFacade, VoiceAssistantState
+from src.utils.exceptions import AstirError
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('voice_assistant.log')
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Global voice assistant instance
+voice_assistant: Optional[VoiceAssistantFacade] = None
 
 
-def setup_logging():
-    """Set up structured logging for the application."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler('voice_assistant.log')
-        ]
-    )
-    return logging.getLogger(__name__)
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully."""
+    logger.info(f"Received signal {signum}, shutting down...")
+    
+    if voice_assistant:
+        voice_assistant.shutdown()
+    
+    sys.exit(0)
 
 
 def check_environment():
-    """Check that required environment variables are set."""
-    required_vars = ['OPENROUTER_API_KEY']
-    missing_vars = []
+    """Check environment requirements."""
+    logger.info("🔍 Checking environment requirements...")
     
-    for var in required_vars:
-        if not os.getenv(var):
-            missing_vars.append(var)
+    # Check for OpenRouter API key
+    api_key = os.getenv('OPENROUTER_API_KEY')
+    if not api_key:
+        logger.warning("⚠️  OPENROUTER_API_KEY not found in environment variables")
+        logger.warning("   Set your API key with: export OPENROUTER_API_KEY='your-key-here'")
+        return False
+    else:
+        logger.info("✅ OpenRouter API key found")
     
-    if missing_vars:
-        raise InitializationError(
-            f"Missing required environment variables: {', '.join(missing_vars)}"
-        )
+    # Check Python version
+    if sys.version_info < (3, 8):
+        logger.error("❌ Python 3.8+ required")
+        return False
+    else:
+        logger.info(f"✅ Python {sys.version_info.major}.{sys.version_info.minor} detected")
+    
+    return True
+
+
+def print_banner():
+    """Print the Astir Voice Assistant banner."""
+    banner = """
+    ╔══════════════════════════════════════════════════════════════╗
+    ║                                                              ║
+    ║                🎤 ASTIR VOICE ASSISTANT 🎤                   ║
+    ║                                                              ║
+    ║              Natural Voice Conversations with AI             ║
+    ║                                                              ║
+    ║    Audio Input → STT → AI (OpenRouter) → TTS → Audio Out    ║
+    ║                                                              ║
+    ╚══════════════════════════════════════════════════════════════╝
+    """
+    print(banner)
+
+
+def print_system_status(voice_assistant: VoiceAssistantFacade):
+    """Print current system status."""
+    status = voice_assistant.get_system_status()
+    health = voice_assistant.get_system_health()
+    
+    print("\n📊 SYSTEM STATUS:")
+    print(f"   State: {status['state']}")
+    print(f"   Uptime: {status['uptime_seconds']:.1f}s")
+    print(f"   Conversations: {status['conversation_count']}")
+    print(f"   Errors: {status['error_count']}")
+    print(f"   Health: {'✅ Healthy' if health['healthy'] else '❌ Issues detected'}")
+    
+    print("\n🔧 SERVICES STATUS:")
+    for service_name, service_status in status['services'].items():
+        status_icon = "✅" if service_status else "❌"
+        print(f"   {service_name}: {status_icon}")
+    
+    if not health['healthy']:
+        print("\n⚠️  HEALTH ISSUES:")
+        for check in health['checks']:
+            print(f"   - {check}")
+
+
+def interactive_mode(voice_assistant: VoiceAssistantFacade):
+    """Run interactive mode with user commands."""
+    print("\n🎤 INTERACTIVE MODE")
+    print("Commands:")
+    print("  'start' - Start continuous conversation mode")
+    print("  'stop'  - Stop conversation mode")
+    print("  'status' - Show system status")
+    print("  'health' - Show system health")
+    print("  'quit'  - Shutdown system")
+    print()
+    
+    try:
+        while True:
+            try:
+                command = input("astir> ").strip().lower()
+                
+                if command == 'quit' or command == 'exit':
+                    break
+                elif command == 'start':
+                    if voice_assistant.state == VoiceAssistantState.READY:
+                        print("🎤 Starting continuous conversation mode...")
+                        if voice_assistant.start_conversation_mode():
+                            print("✅ Conversation mode started - speak naturally!")
+                            print("   (The system is now listening continuously)")
+                        else:
+                            print("❌ Failed to start conversation mode")
+                    else:
+                        print(f"❌ Cannot start from state: {voice_assistant.state}")
+                
+                elif command == 'stop':
+                    if voice_assistant.state in [VoiceAssistantState.LISTENING, 
+                                                VoiceAssistantState.PROCESSING, 
+                                                VoiceAssistantState.RESPONDING]:
+                        print("🛑 Stopping conversation mode...")
+                        if voice_assistant.stop_conversation_mode():
+                            print("✅ Conversation mode stopped")
+                        else:
+                            print("❌ Failed to stop conversation mode")
+                    else:
+                        print("❌ Conversation mode not active")
+                
+                elif command == 'status':
+                    print_system_status(voice_assistant)
+                
+                elif command == 'health':
+                    health = voice_assistant.get_system_health()
+                    if health['healthy']:
+                        print("✅ System is healthy")
+                    else:
+                        print("❌ System health issues detected:")
+                        for check in health['checks']:
+                            print(f"   - {check}")
+                
+                elif command == 'help':
+                    print("Commands: start, stop, status, health, quit")
+                
+                elif command == '':
+                    continue  # Empty input
+                
+                else:
+                    print(f"Unknown command: {command}. Type 'help' for available commands.")
+                    
+            except KeyboardInterrupt:
+                print("\nUse 'quit' to exit gracefully.")
+            except EOFError:
+                break
+                
+    except Exception as e:
+        logger.error(f"Error in interactive mode: {e}")
 
 
 def main():
-    """Main application entry point."""
-    logger = setup_logging()
-    logger.info("🚀 Starting Astir Voice Assistant...")
+    """Main entry point for the Voice Assistant."""
+    global voice_assistant
+    
+    # Setup signal handlers
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
     
     try:
+        # Print banner
+        print_banner()
+        
         # Check environment
-        check_environment()
-        logger.info("✅ Environment check passed")
+        if not check_environment():
+            logger.error("❌ Environment check failed")
+            sys.exit(1)
         
-        # Load configuration
-        try:
-            config = config_manager.load_configuration()
-            logger.info("✅ Configuration loaded successfully")
-            logger.info(f"   - AI Model: {config.ai.model}")
-            logger.info(f"   - Log Level: {config.system.log_level}")
-        except Exception as e:
-            logger.warning(f"⚠️  Configuration loading failed, using defaults: {e}")
-            # Create minimal default configuration for testing
-            from src.core.config_manager import Configuration
-            config = Configuration()
+        # Initialize Voice Assistant
+        logger.info("🚀 Starting Astir Voice Assistant...")
         
-        # Initialize Event Bus
-        event_bus = EventBusService()
-        event_bus.initialize()
-        logger.info("✅ Event Bus initialized")
+        voice_assistant = VoiceAssistantFacade()
         
-        # Initialize Service Factory
-        service_factory = ServiceFactory(event_bus, config_manager)
-        service_factory.initialize()
-        logger.info("✅ Service Factory initialized")
+        # Initialize the system
+        if not voice_assistant.initialize():
+            logger.error("❌ Failed to initialize Voice Assistant")
+            sys.exit(1)
         
-        # Register services with factory
-        service_factory.register(EventBusService, ServiceMetadata(
-            service_type=EventBusService,
-            lifetime=ServiceLifetime.SINGLETON,
-            description="Event bus for system communication"
-        ))
+        # Print initial status
+        print_system_status(voice_assistant)
         
-        service_factory.register(AudioCaptureService, ServiceMetadata(
-            service_type=AudioCaptureService,
-            lifetime=ServiceLifetime.SINGLETON,
-            dependencies=[EventBusService, AudioConfig],
-            description="Audio capture service with voice activity detection"
-        ))
+        # Run interactive mode
+        interactive_mode(voice_assistant)
         
-        service_factory.register(AudioPlayerService, ServiceMetadata(
-            service_type=AudioPlayerService,
-            lifetime=ServiceLifetime.SINGLETON,
-            dependencies=[EventBusService, AudioConfig],
-            description="Audio player service with queue management"
-        ))
-        
-        logger.info("✅ Services registered with factory")
-        
-        # Create services through factory (for demonstration)
-        # Note: For now, we'll still create them directly to maintain compatibility
-        audio_capture = AudioCaptureService(event_bus, config.audio)
-        audio_capture.initialize()
-        logger.info("✅ Audio Capture Service initialized")
-        
-        audio_player = AudioPlayerService(event_bus, config.audio)
-        audio_player.initialize()
-        logger.info("✅ Audio Player Service initialized")
-        
-        # Set up event handlers
-        def system_ready_handler(data):
-            logger.info(f"🎉 System ready: {data}")
-        
-        def system_shutdown_handler(data):
-            logger.info(f"🛑 System shutdown: {data}")
-        
-        def audio_data_handler(data):
-            if data.get('status') == 'capture_started':
-                logger.info(f"🎤 Audio capture started: {data.get('device', 'unknown')}")
-        
-        def speech_detected_handler(data):
-            logger.info(f"🗣️  Speech detected: RMS={data.get('rms_level', 0):.4f}")
-        
-        def speech_ended_handler(data):
-            duration = data.get('duration_seconds', 0)
-            logger.info(f"🔇 Speech ended: {duration:.2f}s")
-            
-            # Demo: Play a test response when speech ends
-            import numpy as np
-            sample_rate = 22050
-            duration = 0.5  # 0.5 second beep
-            frequency = 800  # Higher frequency beep
-            
-            t = np.linspace(0, duration, int(sample_rate * duration))
-            beep_audio = 0.2 * np.sin(2 * np.pi * frequency * t).astype(np.float32)
-            
-            try:
-                audio_player.play_audio(
-                    audio_data=beep_audio,
-                    sample_rate=sample_rate,
-                    priority=PlaybackPriority.HIGH,
-                    clip_id="response_beep"
-                )
-                logger.info("🔊 Playing response beep")
-            except Exception as e:
-                logger.warning(f"Could not play response beep: {e}")
-        
-        def playback_started_handler(data):
-            clip_id = data.get('clip_id', 'unknown')
-            duration = data.get('duration', 0)
-            logger.info(f"🔊 Playback started: {clip_id} ({duration:.2f}s)")
-        
-        def playback_finished_handler(data):
-            clip_id = data.get('clip_id', 'unknown')
-            logger.info(f"🔇 Playback finished: {clip_id}")
-        
-        # Subscribe to events
-        event_bus.subscribe(EventTypes.SYSTEM_READY, system_ready_handler)
-        event_bus.subscribe(EventTypes.SYSTEM_SHUTDOWN, system_shutdown_handler)
-        event_bus.subscribe(EventTypes.AUDIO_DATA_RECEIVED, audio_data_handler)
-        event_bus.subscribe(EventTypes.SPEECH_DETECTED, speech_detected_handler)
-        event_bus.subscribe(EventTypes.SPEECH_ENDED, speech_ended_handler)
-        event_bus.subscribe(EventTypes.PLAYBACK_STARTED, playback_started_handler)
-        event_bus.subscribe(EventTypes.PLAYBACK_FINISHED, playback_finished_handler)
-        
-        logger.info("✅ Event handlers registered")
-        
-        # TODO: Initialize other services (Audio, Speech, AI, etc.)
-        # This will be implemented in subsequent phases
-        
-        logger.info("🎤 Voice Assistant is ready!")
-        logger.info("📊 System Statistics:")
-        
-        # Event Bus Statistics
-        eb_stats = event_bus.get_statistics()
-        logger.info(f"   - Event subscriptions: {eb_stats.active_subscriptions}")
-        logger.info(f"   - Worker threads: {event_bus._worker_threads}")
-        
-        # Service Factory Statistics
-        factory_stats = service_factory.get_statistics()
-        logger.info(f"   - Registered services: {factory_stats.total_services_registered}")
-        logger.info(f"   - Created instances: {factory_stats.total_instances_created}")
-        
-        # Audio Services Statistics
-        capture_stats = audio_capture.get_statistics()
-        player_stats = audio_player.get_statistics()
-        logger.info(f"   - Input device: {capture_stats.get('selected_device', 'None')}")
-        logger.info(f"   - Output device: {player_stats.get('selected_device', 'None')}")
-        logger.info(f"   - Audio capture ready: {capture_stats.get('is_capturing', False)}")
-        logger.info(f"   - Audio player ready: {player_stats.get('is_playing', False)}")
-        
-        # Start audio capture for demonstration
-        try:
-            audio_capture.start_capture()
-            logger.info("🎧 Audio capture started - listening for speech...")
-            logger.info("🔊 Audio player ready - will beep when you finish speaking")
-        except Exception as e:
-            logger.warning(f"⚠️  Audio capture not available: {e}")
-        
-        # Keep the application running
-        try:
-            while True:
-                import time
-                time.sleep(1)
-        except KeyboardInterrupt:
-            logger.info("🛑 Shutdown requested by user")
-        
-    except AstirError as e:
-        logger.error(f"❌ Astir Error: {e.message}")
-        if e.details:
-            logger.error(f"   Details: {e.details}")
-        sys.exit(1)
+    except KeyboardInterrupt:
+        logger.info("Received keyboard interrupt")
     except Exception as e:
-        logger.error(f"❌ Unexpected error: {e}")
-        sys.exit(1)
+        logger.error(f"Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         # Cleanup
-        try:
-            event_bus.publish(EventTypes.SYSTEM_SHUTDOWN, {
-                "reason": "Application shutdown",
-                "timestamp": "now"
-            })
-            audio_capture.shutdown()
-            audio_player.shutdown()
-            service_factory.shutdown()
-            event_bus.shutdown()
-            logger.info("✅ Cleanup completed")
-        except:
-            pass
+        if voice_assistant:
+            logger.info("🛑 Shutting down Voice Assistant...")
+            voice_assistant.shutdown()
+        
+        logger.info("✅ Astir Voice Assistant shutdown complete")
 
 
 if __name__ == "__main__":

@@ -28,6 +28,7 @@ from .service_factory import (
     get_service_factory,
     initialize_service_factory
 )
+from .facade import VoiceAssistantFacade, VoiceAssistantState
 
 __all__ = [
     'EventBusService',
@@ -52,5 +53,7 @@ __all__ = [
     'DependencyResolutionError',
     'CircularDependencyError',
     'get_service_factory',
-    'initialize_service_factory'
+    'initialize_service_factory',
+    'VoiceAssistantFacade',
+    'VoiceAssistantState'
 ]
