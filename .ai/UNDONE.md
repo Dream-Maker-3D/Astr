@@ -34,10 +34,10 @@ This document tracks the development roadmap for Astir, a natural conversation v
 *Status: 🔴 Not Started*
 
 ### 2.1 Audio Capture Service
-- [ ] **Microphone Input**: PyAudio integration with device selection
-- [ ] **Voice Activity Detection**: Real-time VAD with configurable sensitivity
-- [ ] **Audio Preprocessing**: Noise reduction, normalization, and buffering
-- [ ] **Continuous Listening**: Always-on audio capture without activation words
+- [x] **Microphone Input**: PyAudio integration with device selection
+- [x] **Voice Activity Detection**: Real-time VAD with configurable sensitivity
+- [x] **Audio Preprocessing**: Noise reduction, normalization, and buffering
+- [x] **Continuous Listening**: Always-on audio capture without activation words
 
 ### 2.2 Audio Output Service  
 - [ ] **Speaker Output**: Audio playback with volume control and device selection
@@ -220,8 +220,9 @@ This document tracks the development roadmap for Astir, a natural conversation v
 1. ✅ **Set up project structure** following the technical specifications
 2. ✅ **Implement core event bus** for component communication
 3. ✅ **Create configuration management** system with YAML support
-4. **Build basic audio capture** service with VAD
-5. **Integrate Whisper STT** with strategy pattern
+4. ✅ **Build basic audio capture** service with VAD
+5. **Build audio output service** for TTS playback
+6. **Integrate Whisper STT** with strategy pattern
 
 ### 🔧 **TECHNICAL DEBT & IMPROVEMENTS**
 - None yet - starting fresh!
@@ -251,4 +252,4 @@ The project will be considered successful when:
 
 ---
 
-*Last Updated: Core Foundation Complete - Event Bus + Configuration Manager! 🎉*
+*Last Updated: Audio Capture Service Complete - Voice Activity Detection Implemented! 🎤*
