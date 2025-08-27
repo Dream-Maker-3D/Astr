@@ -1,0 +1,258 @@
+@startuml System Architecture - Astir Voice Assistant
+!theme plain
+title Astir Voice Assistant - System Architecture
+
+!define CORE_COLOR #E1F5FE
+!define AUDIO_COLOR #F3E5F5
+!define SPEECH_COLOR #E8F5E8
+!define AI_COLOR #FFF3E0
+!define PLUGIN_COLOR #FFEBEE
+
+package "Core System" <<Rectangle>> CORE_COLOR {
+  
+  class VoiceAssistantFacade {
+    -event_bus: EventBusService
+    -config_manager: ConfigurationManager
+    -plugin_manager: PluginManager
+    -services: Dict[str, Service]
+    +initialize(): bool
+    +start_conversation(): void
+    +stop_conversation(): void
+    +shutdown(): void
+    +get_status(): SystemStatus
+  }
+  
+  class EventBusService {
+    -subscribers: Dict[str, List[Callable]]
+    -event_queue: Queue
+    -is_running: bool
+    +subscribe(event_type: str, handler: Callable): void
+    +unsubscribe(event_type: str, handler: Callable): void
+    +publish(event_type: str, data: Dict): void
+    +publish_async(event_type: str, data: Dict): Awaitable
+  }
+  
+  class ConfigurationManager {
+    -config: Dict
+    -config_path: str
+    -watchers: List[Callable]
+    +load_config(path: str): bool
+    +get_config(section: str): Dict
+    +update_config(section: str, values: Dict): void
+    +validate_config(): bool
+  }
+  
+  class PluginManager {
+    -plugins: Dict[str, Plugin]
+    -plugin_dirs: List[str]
+    -enabled_plugins: Set[str]
+    +load_plugins(): void
+    +enable_plugin(name: str): bool
+    +disable_plugin(name: str): bool
+    +get_plugin(name: str): Plugin
+  }
+}
+
+package "Audio Services" <<Rectangle>> AUDIO_COLOR {
+  
+  class AudioCaptureService {
+    -device_id: int
+    -sample_rate: int
+    -channels: int
+    -chunk_size: int
+    -vad_threshold: float
+    -is_recording: bool
+    +initialize(): bool
+    +start_continuous_listening(): bool
+    +stop_capture(): void
+    +get_audio_devices(): List[AudioDevice]
+    -_detect_voice_activity(audio: ndarray): bool
+  }
+  
+  class AudioPlayerService {
+    -device_id: int
+    -volume: float
+    -playback_queue: Queue
+    -is_playing: bool
+    +initialize(): bool
+    +play_audio(audio_data: bytes): void
+    +stop_playback(): void
+    +set_volume(volume: float): void
+    +get_playback_devices(): List[AudioDevice]
+  }
+  
+  class AudioPreprocessor {
+    -noise_reduction: bool
+    -normalization: bool
+    -filters: List[AudioFilter]
+    +process_audio(audio: ndarray): ndarray
+    +apply_noise_reduction(audio: ndarray): ndarray
+    +normalize_audio(audio: ndarray): ndarray
+  }
+}
+
+package "Speech Services" <<Rectangle>> SPEECH_COLOR {
+  
+  class SpeechRecognitionService {
+    -strategy: STTStrategy
+    -confidence_threshold: float
+    -language: str
+    +initialize(): bool
+    +transcribe_audio(audio: ndarray): TranscriptionResult
+    +set_strategy(strategy: STTStrategy): void
+  }
+  
+  class SpeechSynthesisService {
+    -strategy: TTSStrategy
+    -voice_id: str
+    -speaking_rate: float
+    +initialize(): bool
+    +synthesize_text(text: str): AudioData
+    +set_strategy(strategy: TTSStrategy): void
+    +set_voice(voice_id: str): void
+  }
+  
+  interface STTStrategy {
+    +initialize(): bool
+    +transcribe(audio: ndarray, sample_rate: int): Dict
+    +cleanup(): void
+    +is_ready(): bool
+  }
+  
+  interface TTSStrategy {
+    +initialize(): bool
+    +synthesize(text: str): AudioData
+    +cleanup(): void
+    +is_ready(): bool
+  }
+  
+  class WhisperSTTStrategy {
+    -model: WhisperModel
+    -model_name: str
+    +initialize(): bool
+    +transcribe(audio: ndarray, sample_rate: int): Dict
+  }
+  
+  class CoquiTTSStrategy {
+    -model: CoquiModel
+    -speaker_id: str
+    +initialize(): bool
+    +synthesize(text: str): AudioData
+  }
+}
+
+package "AI Services" <<Rectangle>> AI_COLOR {
+  
+  class AIConversationService {
+    -client: OpenRouterClient
+    -conversation_context: ConversationContext
+    -system_prompt: str
+    +initialize(): bool
+    +send_message(message: str): ConversationResponse
+    +get_conversation_history(): List[Message]
+    +clear_conversation(): void
+  }
+  
+  class OpenRouterClient {
+    -api_key: str
+    -model: str
+    -base_url: str
+    -timeout: int
+    +initialize(): bool
+    +send_request(messages: List[Message]): Response
+    +stream_response(messages: List[Message]): AsyncIterator
+    +test_connection(): bool
+  }
+  
+  class ConversationContext {
+    -messages: List[Message]
+    -max_context_length: int
+    -context_window_seconds: int
+    +add_message(message: Message): void
+    +get_context(): List[Message]
+    +clear_context(): void
+    +trim_context(): void
+  }
+}
+
+package "Plugin System" <<Rectangle>> PLUGIN_COLOR {
+  
+  interface Plugin {
+    +name: str
+    +version: str
+    +initialize(): bool
+    +cleanup(): void
+    +is_enabled(): bool
+  }
+  
+  interface MemoryPlugin {
+    +store_interaction(interaction: Interaction): void
+    +retrieve_context(query: str): List[Context]
+    +get_relevant_memories(query: str): List[Memory]
+  }
+  
+  interface MCPPlugin {
+    +connect_to_server(server_config: Dict): bool
+    +execute_tool(tool_name: str, params: Dict): Result
+    +list_available_tools(): List[Tool]
+  }
+  
+  interface ToolPlugin {
+    +execute(command: str, params: Dict): Result
+    +get_capabilities(): List[Capability]
+    +validate_params(params: Dict): bool
+  }
+  
+  class VectorMemoryPlugin {
+    -vector_db: ChromaDB
+    -embedding_model: EmbeddingModel
+    +store_interaction(interaction: Interaction): void
+    +retrieve_context(query: str): List[Context]
+  }
+  
+  class FileSystemMCPPlugin {
+    -mcp_client: MCPClient
+    -allowed_paths: List[str]
+    +connect_to_server(server_config: Dict): bool
+    +read_file(path: str): str
+    +write_file(path: str, content: str): bool
+  }
+}
+
+' Relationships
+VoiceAssistantFacade --> EventBusService : uses
+VoiceAssistantFacade --> ConfigurationManager : uses
+VoiceAssistantFacade --> PluginManager : uses
+
+AudioCaptureService --> EventBusService : publishes events
+AudioPlayerService --> EventBusService : subscribes to events
+AudioCaptureService --> AudioPreprocessor : uses
+
+SpeechRecognitionService --> STTStrategy : uses
+SpeechSynthesisService --> TTSStrategy : uses
+WhisperSTTStrategy ..|> STTStrategy : implements
+CoquiTTSStrategy ..|> TTSStrategy : implements
+
+AIConversationService --> OpenRouterClient : uses
+AIConversationService --> ConversationContext : uses
+
+PluginManager --> Plugin : manages
+VectorMemoryPlugin ..|> MemoryPlugin : implements
+FileSystemMCPPlugin ..|> MCPPlugin : implements
+MemoryPlugin --|> Plugin : extends
+MCPPlugin --|> Plugin : extends
+ToolPlugin --|> Plugin : extends
+
+' Event Flow
+EventBusService ..> AudioCaptureService : AUDIO_DATA_RECEIVED
+EventBusService ..> SpeechRecognitionService : SPEECH_RECOGNIZED
+EventBusService ..> AIConversationService : AI_RESPONSE_RECEIVED
+EventBusService ..> SpeechSynthesisService : TTS_AUDIO_GENERATED
+EventBusService ..> AudioPlayerService : PLAYBACK_FINISHED
+
+note top of VoiceAssistantFacade : Facade Pattern\nMain system coordinator
+note top of EventBusService : Observer Pattern\nDecoupled communication
+note top of STTStrategy : Strategy Pattern\nPluggable STT providers
+note top of Plugin : Plugin Pattern\nExtensible functionality
+
+@enduml

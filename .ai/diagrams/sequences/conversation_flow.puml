@@ -1,0 +1,163 @@
+@startuml Conversation Flow Sequence
+!theme plain
+title Complete Conversation Flow - Audio Input to TTS Output
+
+actor User
+participant "Audio Capture\nService" as AudioCapture
+participant "Event Bus\nService" as EventBus
+participant "Speech Recognition\nService" as SpeechRec
+participant "AI Conversation\nService" as AIService
+participant "OpenRouter\nClient" as OpenRouter
+participant "Speech Synthesis\nService" as TTS
+participant "Audio Player\nService" as AudioPlayer
+
+== System Initialization ==
+note over AudioCapture, AudioPlayer : System startup and service initialization
+AudioCapture -> EventBus : subscribe(SYSTEM_READY)
+SpeechRec -> EventBus : subscribe(AUDIO_DATA_RECEIVED)
+AIService -> EventBus : subscribe(SPEECH_RECOGNIZED)
+TTS -> EventBus : subscribe(AI_RESPONSE_RECEIVED)
+AudioPlayer -> EventBus : subscribe(TTS_AUDIO_GENERATED)
+
+AudioCapture -> AudioCapture : initialize_microphone()
+AudioCapture -> AudioCapture : start_continuous_listening()
+note right : VAD threshold: 0.005\nTurn-taking pause: 800ms
+
+== Voice Input Detection ==
+User -> AudioCapture : **speaks** "Hello, how are you?"
+activate AudioCapture
+
+AudioCapture -> AudioCapture : detect_voice_activity()
+note right : RMS > 0.005 detected
+AudioCapture -> EventBus : publish(SPEECH_DETECTED, {confidence: 0.85})
+AudioCapture -> AudioCapture : start_accumulating_audio()
+
+loop Continuous Audio Capture
+  AudioCapture -> AudioCapture : capture_audio_chunk()
+  AudioCapture -> AudioCapture : check_voice_activity()
+  note right : Continue until 800ms silence
+end
+
+User -> AudioCapture : **stops speaking** (800ms pause)
+AudioCapture -> AudioCapture : detect_speech_end()
+AudioCapture -> AudioCapture : finalize_audio_segment()
+
+== Speech Recognition ==
+AudioCapture -> EventBus : publish(AUDIO_DATA_RECEIVED, {audio_data, sample_rate, timestamp})
+deactivate AudioCapture
+
+EventBus -> SpeechRec : AUDIO_DATA_RECEIVED event
+activate SpeechRec
+
+SpeechRec -> SpeechRec : validate_audio_format()
+SpeechRec -> SpeechRec : preprocess_audio()
+note right : Noise reduction, normalization
+
+SpeechRec -> SpeechRec : transcribe_with_whisper()
+note right : Whisper base model\nConfidence scoring
+
+SpeechRec -> EventBus : publish(SPEECH_RECOGNIZED, {\n  text: "Hello, how are you?",\n  confidence: 0.92,\n  language: "en"\n})
+deactivate SpeechRec
+
+== AI Processing ==
+EventBus -> AIService : SPEECH_RECOGNIZED event
+activate AIService
+
+AIService -> AIService : update_conversation_context()
+AIService -> AIService : prepare_messages()
+note right : Add user message to context\nApply system prompt
+
+AIService -> OpenRouter : send_request(messages)
+activate OpenRouter
+
+OpenRouter -> OpenRouter : validate_api_key()
+OpenRouter -> OpenRouter : format_openrouter_request()
+note right : Model: anthropic/claude-3.5-sonnet\nMax tokens: 20, Temperature: 0.6
+
+OpenRouter --> AIService : streaming_response
+note right : "I'm doing well, thanks!\nHow can I help you today?"
+deactivate OpenRouter
+
+AIService -> AIService : process_response()
+AIService -> AIService : update_conversation_history()
+
+AIService -> EventBus : publish(AI_RESPONSE_RECEIVED, {\n  text: "I'm doing well, thanks! How can I help you today?",\n  response_time: 1.8s\n})
+deactivate AIService
+
+== Speech Synthesis ==
+EventBus -> TTS : AI_RESPONSE_RECEIVED event
+activate TTS
+
+TTS -> TTS : validate_text_input()
+TTS -> TTS : prepare_for_synthesis()
+note right : Voice: Daisy Studious\nSpeaking rate: 1.1
+
+TTS -> TTS : synthesize_with_coqui()
+note right : XTTS-v2 model\nNatural prosody
+
+TTS -> EventBus : publish(TTS_AUDIO_GENERATED, {\n  audio_data: <bytes>,\n  duration: 2.3s,\n  format: "wav"\n})
+deactivate TTS
+
+== Audio Playback ==
+EventBus -> AudioPlayer : TTS_AUDIO_GENERATED event
+activate AudioPlayer
+
+AudioPlayer -> AudioPlayer : validate_audio_format()
+AudioPlayer -> AudioPlayer : queue_for_playback()
+
+AudioPlayer -> AudioPlayer : start_playback()
+AudioPlayer -> User : **plays audio** "I'm doing well, thanks! How can I help you today?"
+
+AudioPlayer -> EventBus : publish(PLAYBACK_STARTED, {duration: 2.3s})
+
+note over User : User hears the response
+AudioPlayer -> AudioPlayer : monitor_playback()
+
+AudioPlayer -> EventBus : publish(PLAYBACK_FINISHED, {success: true})
+deactivate AudioPlayer
+
+== Ready for Next Interaction ==
+note over AudioCapture, AudioPlayer : System ready for next user input
+AudioCapture -> AudioCapture : continue_listening()
+note right : Continuous VAD monitoring
+
+== Error Handling Scenarios ==
+
+alt Microphone Error
+  AudioCapture -> AudioCapture : detect_device_failure()
+  AudioCapture -> EventBus : publish(AUDIO_DEVICE_ERROR, {error: "mic_disconnected"})
+  EventBus -> AIService : AUDIO_DEVICE_ERROR event
+  AIService -> TTS : synthesize("I'm having trouble hearing you. Please check your microphone.")
+end
+
+alt Network Error
+  AIService -> OpenRouter : send_request(messages)
+  OpenRouter --> AIService : network_timeout_error
+  AIService -> EventBus : publish(SYSTEM_ERROR, {error: "network_timeout"})
+  AIService -> TTS : synthesize("I'm having connection issues. Please try again in a moment.")
+end
+
+alt Low Confidence Recognition
+  SpeechRec -> SpeechRec : check_confidence_threshold()
+  note right : Confidence < 0.6
+  SpeechRec -> EventBus : publish(LOW_CONFIDENCE_RECOGNITION, {confidence: 0.4})
+  EventBus -> AIService : LOW_CONFIDENCE_RECOGNITION event
+  AIService -> TTS : synthesize("I didn't catch that clearly. Could you repeat it?")
+end
+
+== Performance Metrics ==
+note over AudioCapture, AudioPlayer
+  **Performance Targets:**
+  - Audio capture to speech detection: < 100ms
+  - Speech recognition processing: < 500ms  
+  - AI response generation: < 2000ms
+  - TTS synthesis: < 300ms
+  - Total end-to-end: < 3000ms
+  
+  **Quality Metrics:**
+  - STT accuracy: > 95%
+  - TTS naturalness: MOS > 4.0
+  - System uptime: > 99.5%
+end note
+
+@enduml
