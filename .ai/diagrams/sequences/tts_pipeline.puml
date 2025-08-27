@@ -1,0 +1,237 @@
+@startuml TTS Processing Pipeline Sequence
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 150
+
+title Text-to-Speech Processing Pipeline Flow
+
+actor User
+participant "AI Conversation\nService" as AIService
+participant "Event Bus\nService" as EventBus
+participant "Speech Synthesis\nService" as TTSService
+participant "Coqui TTS\nStrategy" as CoquiTTS
+participant "Coqui TTS\nModel" as CoquiModel
+participant "Configuration\nManager" as Config
+participant "Audio Player\nService" as AudioPlayer
+
+== Initialization Phase ==
+
+User -> TTSService : initialize()
+activate TTSService
+
+TTSService -> Config : get_speech_config()
+activate Config
+Config --> TTSService : SpeechConfig(model="xtts_v2", voice="female_young")
+deactivate Config
+
+TTSService -> CoquiTTS : initialize()
+activate CoquiTTS
+
+CoquiTTS -> CoquiModel : load_model("xtts_v2", device="cpu")
+activate CoquiModel
+note right : Model loading can take 30-60s\ndepending on model size and device
+CoquiModel --> CoquiTTS : model_loaded
+deactivate CoquiModel
+
+CoquiTTS -> CoquiTTS : load_voice_samples()
+note right : Load reference voice samples\nfor voice cloning
+
+CoquiTTS --> TTSService : initialization_complete
+deactivate CoquiTTS
+
+TTSService -> EventBus : subscribe("AI_RESPONSE_READY", handle_ai_response)
+TTSService -> EventBus : subscribe("SYNTHESIS_REQUEST", handle_synthesis_request)
+
+TTSService --> User : service_ready
+deactivate TTSService
+
+== Text-to-Speech Processing ==
+
+User -> User : speaks to assistant
+note right : "What's the weather like today?"
+
+note over AIService : AI processes the question\nand generates response
+
+AIService -> EventBus : publish("AI_RESPONSE_READY", {\n  text: "It's sunny and 75 degrees today.",\n  priority: "normal",\n  conversation_id: "conv-123"\n})
+
+EventBus -> TTSService : handle_ai_response(response_data)
+activate TTSService
+
+TTSService -> EventBus : publish("SYNTHESIS_STARTED", {\n  text_id: "tts-456",\n  text: "It's sunny and 75 degrees today.",\n  voice_id: "female_young",\n  timestamp: t1\n})
+
+== Voice Synthesis Processing ==
+
+TTSService -> CoquiTTS : synthesize_text("It's sunny and 75 degrees today.", "female_young")
+activate CoquiTTS
+
+CoquiTTS -> CoquiTTS : prepare_voice_sample("female_young")
+note right : Load or generate voice embedding\nfor the specified voice
+
+CoquiTTS -> CoquiTTS : preprocess_text(text)
+note right : - Clean and normalize text\n- Handle punctuation\n- Prepare for synthesis
+
+CoquiTTS -> CoquiModel : tts(text="It's sunny and 75 degrees today.", speaker_wav=voice_sample)
+activate CoquiModel
+
+note over CoquiModel : Coqui TTS Processing:\n- Text analysis and phonemization\n- Mel-spectrogram generation\n- Vocoder audio synthesis\n- Voice cloning application
+
+CoquiModel --> CoquiTTS : raw_audio_array
+deactivate CoquiModel
+
+CoquiTTS -> CoquiTTS : postprocess_audio(raw_audio)
+note right : - Apply voice parameters\n- Normalize volume\n- Format conversion\n- Quality enhancement
+
+CoquiTTS --> TTSService : SynthesisResult(\n  audio_data=processed_audio,\n  sample_rate=22050,\n  duration=2.1s,\n  voice_id="female_young",\n  synthesis_time=0.28s\n)
+deactivate CoquiTTS
+
+== Audio Playback Integration ==
+
+TTSService -> TTSService : validate_synthesis_quality(result)
+alt High Quality Synthesis
+    TTSService -> AudioPlayer : queue_audio(audio_clip, priority="normal")
+    activate AudioPlayer
+    
+    AudioPlayer -> AudioPlayer : add_to_playback_queue(audio_clip)
+    AudioPlayer --> TTSService : audio_queued
+    deactivate AudioPlayer
+    
+    TTSService -> EventBus : publish("SYNTHESIS_COMPLETED", {\n  text_id: "tts-456",\n  audio_duration: 2.1s,\n  synthesis_time: 0.28s,\n  voice_id: "female_young",\n  quality_score: 0.95,\n  timestamp: t2\n})
+    
+    AudioPlayer -> EventBus : publish("PLAYBACK_STARTED", {\n  audio_id: "tts-456",\n  duration: 2.1s\n})
+    
+    note over AudioPlayer : Playing synthesized speech:\n"It's sunny and 75 degrees today."
+    
+    AudioPlayer -> EventBus : publish("PLAYBACK_FINISHED", {\n  audio_id: "tts-456",\n  actual_duration: 2.1s\n})
+    
+else Low Quality Synthesis
+    TTSService -> EventBus : publish("SYNTHESIS_WARNING", {\n  text_id: "tts-456",\n  quality_score: 0.6,\n  action: "retry_with_different_voice"\n})
+    
+    TTSService -> TTSService : retry_synthesis_with_fallback()
+end
+
+TTSService -> TTSService : update_statistics(result)
+TTSService --> User : synthesis_complete
+deactivate TTSService
+
+== Streaming Synthesis (Alternative Flow) ==
+
+note over User, AudioPlayer : Alternative: Streaming Mode for Long Text
+
+AIService -> EventBus : publish("AI_RESPONSE_READY", {\n  text: "Here's a detailed weather forecast...",\n  streaming: true,\n  priority: "normal"\n})
+
+EventBus -> TTSService : handle_ai_response(streaming_response)
+activate TTSService
+
+TTSService -> CoquiTTS : synthesize_stream(text_chunks)
+activate CoquiTTS
+
+loop Streaming Text Chunks
+    CoquiTTS -> CoquiModel : tts(text_chunk, speaker_wav)
+    activate CoquiModel
+    CoquiModel --> CoquiTTS : audio_chunk
+    deactivate CoquiModel
+    
+    CoquiTTS --> TTSService : AudioChunk(\n  chunk_data=audio_bytes,\n  chunk_id="chunk-1",\n  is_final=false\n)
+    
+    TTSService -> AudioPlayer : queue_audio_chunk(audio_chunk)
+    TTSService -> EventBus : publish("SYNTHESIS_CHUNK_READY", chunk_data)
+    
+    note right : Audio plays while synthesis\ncontinues for remaining text
+end
+
+CoquiTTS --> TTSService : final_audio_chunk
+deactivate CoquiTTS
+
+TTSService -> EventBus : publish("SYNTHESIS_COMPLETED", final_result)
+deactivate TTSService
+
+== Voice Parameter Customization ==
+
+note over User, AudioPlayer : Voice Customization Scenario
+
+User -> TTSService : set_voice_parameters({\n  speaking_rate: 1.2,\n  pitch: 0.1,\n  volume: 0.8\n})
+activate TTSService
+
+TTSService -> CoquiTTS : set_voice_parameters(new_params)
+activate CoquiTTS
+
+CoquiTTS -> CoquiTTS : validate_parameters(new_params)
+CoquiTTS -> CoquiTTS : update_synthesis_settings(new_params)
+
+CoquiTTS --> TTSService : parameters_updated
+deactivate CoquiTTS
+
+TTSService -> EventBus : publish("VOICE_PARAMETERS_CHANGED", {\n  speaking_rate: 1.2,\n  pitch: 0.1,\n  volume: 0.8,\n  timestamp: t3\n})
+
+TTSService --> User : parameters_applied
+deactivate TTSService
+
+== Error Handling Flow ==
+
+note over User, AudioPlayer : Error Handling Scenarios
+
+AIService -> EventBus : publish("AI_RESPONSE_READY", {\n  text: "Response with invalid characters: \x00\x01",\n  priority: "normal"\n})
+
+EventBus -> TTSService : handle_ai_response(invalid_response)
+activate TTSService
+
+TTSService -> CoquiTTS : synthesize_text(invalid_text, voice_id)
+activate CoquiTTS
+
+CoquiTTS -> CoquiModel : tts(invalid_text, speaker_wav)
+activate CoquiModel
+CoquiModel --> CoquiTTS : SynthesisError("Invalid characters in text")
+deactivate CoquiModel
+
+CoquiTTS --> TTSService : SynthesisError
+deactivate CoquiTTS
+
+TTSService -> EventBus : publish("SYNTHESIS_ERROR", {\n  text_id: "tts-789",\n  error_type: "invalid_text",\n  message: "Invalid characters in text",\n  retry_possible: true,\n  timestamp: t4\n})
+
+TTSService -> TTSService : attempt_error_recovery()
+alt Recovery Successful
+    TTSService -> TTSService : clean_text_and_retry()
+    note right : Remove invalid characters\nand retry synthesis
+else Recovery Failed
+    TTSService -> EventBus : publish("SYNTHESIS_FAILED", {\n  text_id: "tts-789",\n  error: "Unrecoverable synthesis error",\n  fallback_action: "use_simple_tts"\n})
+end
+
+deactivate TTSService
+
+== Voice Cloning Flow ==
+
+note over User, AudioPlayer : Voice Cloning Scenario
+
+User -> TTSService : clone_voice(reference_audio_sample)
+activate TTSService
+
+TTSService -> CoquiTTS : analyze_voice_sample(reference_audio)
+activate CoquiTTS
+
+CoquiTTS -> CoquiModel : extract_voice_embedding(reference_audio)
+activate CoquiModel
+CoquiModel --> CoquiTTS : voice_embedding
+deactivate CoquiModel
+
+CoquiTTS -> CoquiTTS : create_voice_profile(voice_embedding)
+CoquiTTS -> CoquiTTS : validate_cloned_voice(voice_profile)
+
+CoquiTTS --> TTSService : VoiceInfo(\n  voice_id="cloned_voice_001",\n  characteristics=voice_profile,\n  quality_score=0.89\n)
+deactivate CoquiTTS
+
+TTSService -> EventBus : publish("VOICE_CLONED", {\n  new_voice_id: "cloned_voice_001",\n  quality_score: 0.89,\n  timestamp: t5\n})
+
+TTSService --> User : voice_cloning_complete
+deactivate TTSService
+
+== Performance Monitoring ==
+
+note over TTSService : Continuous Performance Tracking
+
+TTSService -> TTSService : track_metrics({\n  synthesis_time: 0.28s,\n  audio_quality: 0.95,\n  memory_usage: current,\n  voice_consistency: 0.92\n})
+
+alt Performance Degradation Detected
+    TTSService -> EventBus : publish("TTS_PERFORMANCE_WARNING", {\n  metric: "synthesis_time",\n  current_value: 0.8s,\n  threshold: 0.3s,\n  recommendation: "consider_model_optimization",\n  timestamp: t6\n})
+end
+
+@enduml

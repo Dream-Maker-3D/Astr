@@ -112,9 +112,12 @@ This document tracks the development roadmap for Astir, a natural conversation v
 ---
 
 ## 🎵 **PHASE 5: Speech Synthesis (Coqui TTS)**
-*Status: 🔴 Not Started*
+*Status: 🔄 In Progress - BDD Planning Complete*
 
 ### 5.1 Coqui TTS Integration
+- [x] **BDD Planning**: Comprehensive Gherkin scenarios for TTS service (12 scenarios)
+- [x] **UML Design**: Class diagram with Strategy pattern and service relationships
+- [x] **Sequence Design**: Complete TTS pipeline flow with voice synthesis
 - [ ] **Model Loading**: XTTS-v2 model with voice cloning capabilities
 - [ ] **Strategy Implementation**: CoquiTTS strategy following the Strategy pattern
 - [ ] **Voice Selection**: Multiple voice options with natural-sounding output
@@ -236,7 +239,7 @@ This document tracks the development roadmap for Astir, a natural conversation v
 5. ✅ **Build audio output service** for TTS playback
 6. ✅ **Create service factory** for dependency injection
 7. ✅ **Integrate Whisper STT** with strategy pattern (Core Implementation Complete)
-8. **Implement Coqui TTS** with voice synthesis
+8. 🔄 **Implement Coqui TTS** with voice synthesis (BDD Complete - Ready for Implementation)
 
 ### 🔧 **TECHNICAL DEBT & IMPROVEMENTS**
 - None yet - starting fresh!
@@ -266,4 +269,4 @@ The project will be considered successful when:
 
 ---
 
-*Last Updated: Whisper STT Strategy Complete - Core Speech Recognition Implementation! 🎤*
+*Last Updated: Coqui TTS BDD Planning Complete - Ready for Speech Synthesis Implementation! 🎵*

@@ -1,0 +1,276 @@
+@startuml Speech Synthesis Class Diagram
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam classFontSize 12
+skinparam packageFontSize 14
+
+package "Speech Synthesis System" {
+    
+    ' Strategy Pattern Interface
+    interface ISpeechSynthesis {
+        +initialize() : bool
+        +synthesize_text(text: str, voice_id: str) : SynthesisResult
+        +synthesize_stream(text_stream: Iterator[str]) : Iterator[AudioChunk]
+        +get_available_voices() : List[VoiceInfo]
+        +set_voice_parameters(params: VoiceParameters) : void
+        +get_capabilities() : TTSCapabilities
+        +shutdown() : void
+    }
+    
+    ' Main Service Class
+    class SpeechSynthesisService {
+        -_event_bus: EventBusService
+        -_config: SpeechConfig
+        -_tts_strategy: ISpeechSynthesis
+        -_audio_player: AudioPlayerService
+        -_is_initialized: bool
+        -_synthesis_queue: Queue[SynthesisRequest]
+        -_worker_thread: Thread
+        -_statistics: TTSStatistics
+        -_current_voice: str
+        
+        +initialize() : bool
+        +set_strategy(strategy: ISpeechSynthesis) : void
+        +synthesize_text(text: str, priority: Priority) : SynthesisResult
+        +change_voice(voice_id: str) : bool
+        +set_voice_parameters(params: VoiceParameters) : void
+        +get_available_voices() : List[VoiceInfo]
+        +get_statistics() : TTSStatistics
+        +shutdown() : void
+        
+        -_process_synthesis_worker() : void
+        -_handle_synthesis_request(request: SynthesisRequest) : void
+        -_publish_events(event_type: str, data: dict) : void
+    }
+    
+    ' Concrete Strategy Implementations
+    class CoquiTTSStrategy {
+        -_model: CoquiTTSModel
+        -_model_name: str
+        -_device: str
+        -_voice_samples: Dict[str, AudioSample]
+        -_synthesis_settings: SynthesisSettings
+        
+        +initialize() : bool
+        +synthesize_text(text: str, voice_id: str) : SynthesisResult
+        +synthesize_stream(text_stream: Iterator[str]) : Iterator[AudioChunk]
+        +get_available_voices() : List[VoiceInfo]
+        +set_voice_parameters(params: VoiceParameters) : void
+        +get_capabilities() : TTSCapabilities
+        +shutdown() : void
+        
+        -_load_model() : CoquiTTSModel
+        -_prepare_voice_sample(voice_id: str) : AudioSample
+        -_generate_audio(text: str, voice_sample: AudioSample) : bytes
+        -_postprocess_audio(raw_audio: bytes) : SynthesisResult
+    }
+    
+    class FastTTSStrategy {
+        -_model: FastSpeechModel
+        -_vocoder: Vocoder
+        -_voice_embeddings: Dict[str, Tensor]
+        
+        +initialize() : bool
+        +synthesize_text(text: str, voice_id: str) : SynthesisResult
+        +synthesize_stream(text_stream: Iterator[str]) : Iterator[AudioChunk]
+        +get_available_voices() : List[VoiceInfo]
+        +set_voice_parameters(params: VoiceParameters) : void
+        +get_capabilities() : TTSCapabilities
+        +shutdown() : void
+        
+        -_text_to_mel(text: str) : Tensor
+        -_mel_to_audio(mel: Tensor) : bytes
+    }
+    
+    class CloudTTSStrategy {
+        -_api_client: CloudAPIClient
+        -_api_key: str
+        -_endpoint: str
+        -_retry_config: RetryConfig
+        
+        +initialize() : bool
+        +synthesize_text(text: str, voice_id: str) : SynthesisResult
+        +synthesize_stream(text_stream: Iterator[str]) : Iterator[AudioChunk]
+        +get_available_voices() : List[VoiceInfo]
+        +set_voice_parameters(params: VoiceParameters) : void
+        +get_capabilities() : TTSCapabilities
+        +shutdown() : void
+        
+        -_handle_api_errors(error: APIError) : void
+        -_format_for_api(text: str, voice: str) : APIRequest
+    }
+}
+
+package "Data Classes" {
+    class SynthesisRequest {
+        +text: str
+        +voice_id: str
+        +priority: Priority
+        +request_id: str
+        +timestamp: datetime
+        +parameters: VoiceParameters
+        
+        +to_dict() : dict
+    }
+    
+    class SynthesisResult {
+        +audio_data: bytes
+        +sample_rate: int
+        +duration: float
+        +voice_id: str
+        +synthesis_time: float
+        +metadata: SynthesisMetadata
+        +request_id: str
+        
+        +save_to_file(path: str) : void
+        +to_audio_clip() : AudioClip
+    }
+    
+    class AudioChunk {
+        +chunk_data: bytes
+        +chunk_id: str
+        +is_final: bool
+        +timestamp: float
+        +duration: float
+        
+        +merge_with(other: AudioChunk) : AudioChunk
+    }
+    
+    class VoiceInfo {
+        +voice_id: str
+        +name: str
+        +gender: str
+        +age_group: str
+        +language: str
+        +style: str
+        +sample_rate: int
+        +is_cloned: bool
+        
+        +is_compatible_with(requirements: dict) : bool
+    }
+    
+    class VoiceParameters {
+        +speaking_rate: float
+        +pitch: float
+        +volume: float
+        +naturalness: str
+        +emotion: str
+        +emphasis: List[str]
+        
+        +validate() : bool
+        +to_dict() : dict
+    }
+    
+    class TTSCapabilities {
+        +supports_streaming: bool
+        +supports_voice_cloning: bool
+        +supported_languages: List[str]
+        +max_text_length: int
+        +supported_formats: List[AudioFormat]
+        +real_time_factor: float
+        +voice_count: int
+        
+        +is_compatible_with(requirements: TTSRequirements) : bool
+    }
+    
+    class TTSStatistics {
+        +total_syntheses: int
+        +average_synthesis_time: float
+        +total_audio_generated: float
+        +voice_usage_distribution: dict
+        +error_count: int
+        +uptime: float
+        
+        +get_performance_metrics() : dict
+    }
+    
+    enum Priority {
+        LOW
+        NORMAL
+        HIGH
+        URGENT
+    }
+    
+    class SynthesisMetadata {
+        +model_name: str
+        +voice_characteristics: dict
+        +processing_device: str
+        +quality_metrics: dict
+        +generation_timestamp: datetime
+    }
+}
+
+package "External Dependencies" {
+    class CoquiTTSModel {
+        +model_path: str
+        +device: str
+        +language: str
+        
+        +tts(text: str, speaker_wav: str) : ndarray
+        +list_speakers() : List[str]
+    }
+    
+    class FastSpeechModel {
+        +model_name: str
+        +device: str
+        +sample_rate: int
+        
+        +synthesize(text: str, speaker_id: int) : Tensor
+    }
+    
+    class CloudAPIClient {
+        +base_url: str
+        +api_key: str
+        +timeout: int
+        
+        +post_synthesis(text: str, voice: str) : dict
+        +stream_synthesis(text: str, voice: str) : Iterator[bytes]
+    }
+}
+
+package "Core Services" {
+    class EventBusService {
+        +publish(event_type: str, data: dict) : void
+        +subscribe(event_type: str, handler: Callable) : void
+    }
+    
+    class ConfigurationManager {
+        +get_speech_config() : SpeechConfig
+    }
+    
+    class AudioPlayerService {
+        +play_audio(audio_clip: AudioClip) : void
+        +queue_audio(audio_clip: AudioClip, priority: Priority) : void
+    }
+}
+
+' Relationships
+ISpeechSynthesis <|-- CoquiTTSStrategy
+ISpeechSynthesis <|-- FastTTSStrategy
+ISpeechSynthesis <|-- CloudTTSStrategy
+
+SpeechSynthesisService --> ISpeechSynthesis : uses
+SpeechSynthesisService --> EventBusService : publishes to
+SpeechSynthesisService --> ConfigurationManager : gets config from
+SpeechSynthesisService --> AudioPlayerService : sends audio to
+
+CoquiTTSStrategy --> CoquiTTSModel : uses
+FastTTSStrategy --> FastSpeechModel : uses
+CloudTTSStrategy --> CloudAPIClient : uses
+
+SpeechSynthesisService --> SynthesisRequest : processes
+SpeechSynthesisService --> SynthesisResult : produces
+SpeechSynthesisService --> TTSStatistics : maintains
+SpeechSynthesisService --> VoiceParameters : configures
+
+SynthesisResult --> AudioChunk : contains
+VoiceInfo --> VoiceParameters : configured with
+TTSCapabilities --> VoiceInfo : supports
+
+' Notes
+note right of ISpeechSynthesis : Strategy Pattern Interface\nAllows swapping between different\nTTS implementations
+note bottom of SpeechSynthesisService : Main orchestrator that manages\nTTS processing and audio playback
+note left of CoquiTTSStrategy : Default implementation using\nCoqui TTS with voice cloning
+note right of VoiceParameters : Configurable voice characteristics\nfor natural speech synthesis
+
+@enduml
