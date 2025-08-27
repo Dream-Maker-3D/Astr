@@ -2,9 +2,8 @@
 Coqui TTS Strategy Implementation.
 
 This module implements the Coqui TTS strategy for speech synthesis,
-providing high-quality voice synthesis with voice cloning capabilities.
-
-Currently implemented as a mock for testing the architecture.
+providing high-quality voice synthesis with voice cloning capabilities
+using the XTTS-v2 model.
 """
 
 import time
@@ -23,6 +22,16 @@ from src.utils.exceptions import (
     SynthesisTimeoutError
 )
 
+# Try to import Coqui TTS - graceful fallback if not available
+try:
+    from TTS.api import TTS
+    import torch
+    COQUI_AVAILABLE = True
+except ImportError:
+    COQUI_AVAILABLE = False
+    TTS = None
+    torch = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,8 +41,6 @@ class CoquiTTSStrategy(ISpeechSynthesis):
     
     Provides high-quality text-to-speech synthesis using Coqui TTS
     with voice cloning capabilities via XTTS-v2 model.
-    
-    Currently implemented as a mock for architecture testing.
     """
     
     def __init__(self, config: SpeechConfig):
@@ -48,6 +55,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         self._model = None
         self._voice_samples: Dict[str, Any] = {}
         self._voice_parameters = VoiceParameters()
+        self._model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
         
         # Mock voice database
         self._available_voices = [
@@ -93,26 +101,40 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             bool: True if initialization successful
         """
         try:
-            logger.info("Initializing Coqui TTS Strategy (Mock mode)")
-            
-            # Mock model loading
-            logger.info(f"Loading TTS model: {self._config.model_name}")
-            logger.info(f"Using device: {self._config.device}")
-            
-            # Simulate model loading time
-            time.sleep(0.1)  # Mock loading delay
-            
-            # Mock model initialization
-            self._model = {
-                'name': self._config.model_name,
-                'device': self._config.device,
-                'loaded': True,
-                'capabilities': {
-                    'voice_cloning': True,
-                    'multilingual': True,
-                    'streaming': True
+            if COQUI_AVAILABLE:
+                # Real Coqui TTS initialization
+                logger.info("Initializing Coqui TTS Strategy with XTTS-v2")
+                
+                # Determine device (GPU if available, otherwise CPU)
+                device = "cuda" if torch and torch.cuda.is_available() else "cpu"
+                logger.info(f"Using device: {device}")
+                
+                # Load XTTS-v2 model
+                logger.info(f"Loading {self._model_name} model...")
+                self._model = TTS(self._model_name, gpu=(device == "cuda"))
+                
+                # Get model info
+                if hasattr(self._model, 'synthesizer') and self._model.synthesizer:
+                    logger.info(f"Model loaded successfully on {device}")
+                    if hasattr(self._model.synthesizer.tts_model, 'language_manager'):
+                        languages = list(self._model.synthesizer.tts_model.language_manager.language_names)
+                        logger.info(f"Supported languages: {languages[:10]}...")  # Show first 10
+                
+            else:
+                # Fallback to mock mode
+                logger.warning("Coqui TTS not available, using mock implementation")
+                
+                # Mock model initialization
+                self._model = {
+                    'name': self._config.model_name,
+                    'device': self._config.device,
+                    'loaded': True,
+                    'capabilities': {
+                        'voice_cloning': True,
+                        'multilingual': True,
+                        'streaming': True
+                    }
                 }
-            }
             
             # Load voice samples (mock)
             self._load_voice_samples()
@@ -148,13 +170,48 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             
             logger.info(f"Synthesizing text with voice {voice_id}: '{text[:50]}...'")
             
-            # Mock synthesis process
-            audio_data = self._generate_mock_audio(text, voice_id)
-            synthesis_time = time.time() - start_time
-            
-            # Calculate duration (mock: ~150 words per minute)
-            word_count = len(text.split())
-            duration = max(0.5, word_count / 2.5)  # Minimum 0.5s
+            if COQUI_AVAILABLE and hasattr(self._model, 'tts'):
+                # Real Coqui TTS synthesis
+                logger.debug(f"Synthesizing with XTTS-v2: '{text[:50]}...'")
+                
+                # Get voice sample for cloning (if available)
+                speaker_wav = None
+                if voice_id in self._voice_samples and 'sample_path' in self._voice_samples[voice_id]:
+                    speaker_wav = self._voice_samples[voice_id]['sample_path']
+                
+                # Synthesize with Coqui TTS
+                if speaker_wav:
+                    # Voice cloning synthesis
+                    audio_array = self._model.tts(
+                        text=text,
+                        speaker_wav=speaker_wav,
+                        language="en"  # TODO: Auto-detect or configure language
+                    )
+                else:
+                    # Use default voice
+                    audio_array = self._model.tts(text=text, language="en")
+                
+                # Convert to bytes (assuming 22050 Hz sample rate)
+                if isinstance(audio_array, np.ndarray):
+                    # Convert float32 to int16 PCM
+                    audio_int16 = (audio_array * 32767).astype(np.int16)
+                    audio_data = audio_int16.tobytes()
+                else:
+                    audio_data = bytes(audio_array)
+                
+                synthesis_time = time.time() - start_time
+                duration = len(audio_array) / 22050.0 if isinstance(audio_array, np.ndarray) else 1.0
+                
+                logger.debug(f"Real synthesis complete: {duration:.2f}s audio in {synthesis_time:.2f}s")
+                
+            else:
+                # Fallback to mock synthesis
+                audio_data = self._generate_mock_audio(text, voice_id)
+                synthesis_time = time.time() - start_time
+                
+                # Calculate duration (mock: ~150 words per minute)
+                word_count = len(text.split())
+                duration = max(0.5, word_count / 2.5)  # Minimum 0.5s
             
             # Create metadata
             metadata = SynthesisMetadata(

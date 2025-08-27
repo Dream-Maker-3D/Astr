@@ -85,13 +85,24 @@ class WhisperSTTStrategy(ISpeechRecognition):
             return True
         
         try:
-            # For now, we'll create a mock initialization
-            # TODO: Implement actual Whisper model loading when dependencies are available
-            if not WHISPER_AVAILABLE:
+            if WHISPER_AVAILABLE:
+                # Load actual Whisper model
+                self._logger.info(f"Loading Whisper {self._model_size} model...")
+                self._model = whisper.load_model(self._model_size)
+                self._logger.info(f"Whisper {self._model_size} model loaded successfully")
+                
+                # Validate model capabilities
+                if hasattr(self._model, 'dims'):
+                    self._logger.info(f"Model dimensions: {self._model.dims}")
+                
+                self._is_initialized = True
+                self._logger.info(f"Whisper STT strategy initialized with {self._model_size} model")
+            else:
+                # Fallback to mock mode if Whisper not available
                 self._logger.warning("Whisper not available, using mock implementation")
-            
-            self._is_initialized = True
-            self._logger.info(f"Whisper STT strategy initialized (mock mode) with {self._model_size} model")
+                self._model = None
+                self._is_initialized = True
+                self._logger.info(f"Whisper STT strategy initialized (mock mode) with {self._model_size} model")
             
             return True
             
@@ -108,11 +119,57 @@ class WhisperSTTStrategy(ISpeechRecognition):
         audio_id = str(uuid.uuid4())
         
         try:
-            # Mock transcription for now
-            # TODO: Implement actual Whisper transcription
-            text = "Mock transcription result"
-            confidence = 0.95
-            language = self._language if self._language != 'auto' else 'en'
+            if WHISPER_AVAILABLE and self._model is not None:
+                # Real Whisper transcription
+                self._logger.debug(f"Transcribing audio with Whisper {self._model_size}")
+                
+                # Convert audio data to format expected by Whisper
+                if hasattr(audio_data, 'data'):
+                    # AudioData object with data attribute
+                    audio_array = np.array(audio_data.data, dtype=np.float32)
+                elif isinstance(audio_data, bytes):
+                    # Convert bytes to numpy array (assuming 16-bit PCM)
+                    audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+                else:
+                    # Assume it's already a numpy array or list
+                    audio_array = np.array(audio_data, dtype=np.float32)
+                
+                # Transcribe with Whisper
+                result = self._model.transcribe(
+                    audio_array,
+                    language=self._language if self._language != 'auto' else None,
+                    task='transcribe',
+                    verbose=False
+                )
+                
+                # Extract transcription results
+                text = result['text'].strip()
+                language = result.get('language', 'en')
+                
+                # Create segments from Whisper segments
+                segments = []
+                for seg in result.get('segments', []):
+                    segments.append(TranscriptionSegment(
+                        text=seg['text'].strip(),
+                        start_time=seg['start'],
+                        end_time=seg['end'],
+                        confidence=max(0.0, min(1.0, (seg.get('avg_logprob', -1.0) + 1.0) / 2.0))
+                    ))
+                
+                # Calculate overall confidence from segments
+                if segments:
+                    confidence = sum(seg.confidence for seg in segments) / len(segments)
+                else:
+                    confidence = 0.8  # Default confidence for successful transcription
+                
+                self._logger.debug(f"Whisper transcription: '{text}' (confidence: {confidence:.3f})")
+                
+            else:
+                # Fallback to mock transcription
+                text = "Mock transcription result"
+                confidence = 0.95
+                language = self._language if self._language != 'auto' else 'en'
+                segments = []
             
             processing_time = time.time() - start_time
             
@@ -124,9 +181,9 @@ class WhisperSTTStrategy(ISpeechRecognition):
                 text=text,
                 confidence=confidence,
                 language=language,
-                segments=[],
+                segments=segments,
                 processing_time=processing_time,
-                metadata={'model': self._model_size, 'mock': True},
+                metadata={'model': self._model_size, 'real_whisper': WHISPER_AVAILABLE and self._model is not None},
                 audio_id=audio_id
             )
             
@@ -179,22 +236,60 @@ class WhisperSTTStrategy(ISpeechRecognition):
             raise LanguageDetectionError("Whisper STT strategy not initialized")
         
         try:
-            # Mock language detection for now
-            # TODO: Implement actual Whisper language detection
-            detected_language = self._language if self._language != 'auto' else 'en'
-            confidence = 0.9
-            
-            alternatives = [
-                LanguageAlternative(language='es', confidence=0.1),
-                LanguageAlternative(language='fr', confidence=0.05)
-            ]
-            
-            return LanguageResult(
-                language=detected_language,
-                confidence=confidence,
-                alternatives=alternatives,
-                detection_method="whisper_mock"
-            )
+            if WHISPER_AVAILABLE and self._model is not None:
+                # Real Whisper language detection
+                self._logger.debug("Detecting language with Whisper")
+                
+                # Convert audio data to format expected by Whisper
+                if hasattr(audio_data, 'data'):
+                    audio_array = np.array(audio_data.data, dtype=np.float32)
+                elif isinstance(audio_data, bytes):
+                    audio_array = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
+                else:
+                    audio_array = np.array(audio_data, dtype=np.float32)
+                
+                # Use Whisper's language detection
+                # Load audio and pad/trim it to fit 30 seconds
+                audio_array = whisper.pad_or_trim(audio_array)
+                
+                # Make log-Mel spectrogram and move to the same device as the model
+                mel = whisper.log_mel_spectrogram(audio_array).to(self._model.device)
+                
+                # Detect the spoken language
+                _, probs = self._model.detect_language(mel)
+                detected_language = max(probs, key=probs.get)
+                confidence = probs[detected_language]
+                
+                # Create alternatives from top languages
+                alternatives = []
+                sorted_probs = sorted(probs.items(), key=lambda x: x[1], reverse=True)
+                for lang, prob in sorted_probs[1:4]:  # Top 3 alternatives (excluding the detected one)
+                    alternatives.append(LanguageAlternative(language=lang, confidence=prob))
+                
+                self._logger.debug(f"Detected language: {detected_language} (confidence: {confidence:.3f})")
+                
+                return LanguageResult(
+                    language=detected_language,
+                    confidence=confidence,
+                    alternatives=alternatives,
+                    detection_method="whisper_real"
+                )
+            else:
+                # Fallback to mock language detection
+                detected_language = self._language if self._language != 'auto' else 'en'
+                confidence = 0.9
+                
+                alternatives = [
+                    LanguageAlternative(language='es', confidence=0.1),
+                    LanguageAlternative(language='fr', confidence=0.05)
+                ]
+                
+                return LanguageResult(
+                    language=detected_language,
+                    confidence=confidence,
+                    alternatives=alternatives,
+                    detection_method="whisper_mock"
+                )
             
         except Exception as e:
             self._logger.error(f"Language detection failed: {e}")
