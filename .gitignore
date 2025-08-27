@@ -1,0 +1,109 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# API Keys and credentials
+*.key
+*.pem
+credentials.json
+config/secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+venv311/
+ENV/
+env/
+.venv/
+.ENV/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+voice_assistant.log*
+
+# Models and large files
+models/
+*.model
+*.bin
+*.safetensors
+*.gguf
+
+# Audio files (temporary)
+*.wav
+*.mp3
+*.flac
+audio_temp/
+recordings/
+
+# Memory and cache
+memory/
+cache/
+.cache/
+*.db
+*.sqlite
+*.sqlite3
+
+# Plugin data
+plugins/data/
+plugins/cache/
+plugins/temp/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Documentation builds
+docs/_build/
+site/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
