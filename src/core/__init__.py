@@ -29,6 +29,10 @@ from .service_factory import (
     initialize_service_factory
 )
 from .facade import VoiceAssistantFacade, VoiceAssistantState
+from .conversation_state import (
+    ConversationStateManager, ConversationState, TurnType,
+    ConversationTurn, ConversationContext
+)
 
 __all__ = [
     'EventBusService',
@@ -55,5 +59,12 @@ __all__ = [
     'get_service_factory',
     'initialize_service_factory',
     'VoiceAssistantFacade',
-    'VoiceAssistantState'
+    'VoiceAssistantState',
+    
+    # Conversation State Management
+    'ConversationStateManager',
+    'ConversationState',
+    'TurnType',
+    'ConversationTurn',
+    'ConversationContext'
 ]

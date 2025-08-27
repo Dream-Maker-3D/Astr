@@ -18,6 +18,7 @@ from pathlib import Path
 from .event_bus import EventBusService
 from .config_manager import ConfigurationManager
 from .service_factory import ServiceFactory
+from .conversation_state import ConversationStateManager, ConversationState
 from ..audio.capture_service import AudioCaptureService
 from ..audio.player_service import AudioPlayerService
 from ..speech.recognition_service import SpeechRecognitionService
@@ -65,6 +66,7 @@ class VoiceAssistantFacade:
         self.config_manager: Optional[ConfigurationManager] = None
         self.event_bus: Optional[EventBusService] = None
         self.service_factory: Optional[ServiceFactory] = None
+        self.conversation_manager: Optional[ConversationStateManager] = None
         
         # Voice pipeline services
         self.audio_capture: Optional[AudioCaptureService] = None
@@ -102,6 +104,10 @@ class VoiceAssistantFacade:
             
             # Step 2: Initialize core services
             if not self._initialize_core_services():
+                return False
+            
+            # Step 2.5: Initialize conversation management
+            if not self._initialize_conversation_manager():
                 return False
             
             # Step 3: Initialize voice pipeline services
@@ -177,6 +183,42 @@ class VoiceAssistantFacade:
             
         except Exception as e:
             logger.error(f"Failed to initialize core services: {e}")
+            return False
+    
+    def _initialize_conversation_manager(self) -> bool:
+        """
+        Initialize conversation state management.
+        
+        Returns:
+            bool: True if initialization successful
+        """
+        try:
+            logger.info("Initializing conversation state manager...")
+            
+            # Create conversation state manager
+            self.conversation_manager = ConversationStateManager(self.event_bus)
+            
+            # Register conversation state callbacks for system coordination
+            self.conversation_manager.register_state_callback(
+                ConversationState.LISTENING,
+                self._on_conversation_listening
+            )
+            
+            self.conversation_manager.register_state_callback(
+                ConversationState.PROCESSING,
+                self._on_conversation_processing
+            )
+            
+            self.conversation_manager.register_state_callback(
+                ConversationState.RESPONDING,
+                self._on_conversation_responding
+            )
+            
+            logger.info("✅ Conversation state manager initialized")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize conversation manager: {e}")
             return False
     
     def _initialize_voice_services(self) -> bool:
@@ -365,21 +407,32 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
             
             logger.info("🎤 Starting continuous conversation mode...")
             
-            # Start audio capture (continuous listening)
-            if not self.audio_capture.start_capture():
-                logger.error("Failed to start audio capture")
+            # Start conversation through conversation manager
+            if self.conversation_manager and self.conversation_manager.start_conversation():
+                # Start audio capture (continuous listening)
+                if not self.audio_capture.start_capture():
+                    logger.error("Failed to start audio capture")
+                    # End conversation if audio capture fails
+                    self.conversation_manager.end_conversation()
+                    return False
+                
+                self.state = VoiceAssistantState.LISTENING
+                self.conversation_active = True
+                self.conversation_count += 1
+                self.last_activity = datetime.now()
+                
+                # Publish conversation mode started
+                self.event_bus.publish("CONVERSATION_MODE_STARTED", {
+                    'timestamp': datetime.now().isoformat(),
+                    'mode': 'continuous',
+                    'conversation_id': self.conversation_manager.context.conversation_id
+                })
+                
+                logger.info("✅ Continuous conversation mode started with state management")
+                return True
+            else:
+                logger.error("Failed to start conversation through conversation manager")
                 return False
-            
-            self.state = VoiceAssistantState.LISTENING
-            
-            # Publish conversation mode started
-            self.event_bus.publish("CONVERSATION_MODE_STARTED", {
-                'timestamp': datetime.now().isoformat(),
-                'mode': 'continuous'
-            })
-            
-            logger.info("✅ Continuous conversation mode started")
-            return True
             
         except Exception as e:
             logger.error(f"Failed to start conversation mode: {e}")
@@ -395,11 +448,16 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
         try:
             logger.info("🛑 Stopping conversation mode...")
             
+            # End conversation through conversation manager
+            if self.conversation_manager:
+                self.conversation_manager.end_conversation()
+            
             # Stop audio capture
             if self.audio_capture:
                 self.audio_capture.stop_capture()
             
             self.state = VoiceAssistantState.READY
+            self.conversation_active = False
             
             # Publish conversation mode stopped
             self.event_bus.publish("CONVERSATION_MODE_STOPPED", {
@@ -434,8 +492,10 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
                 'audio_player': self.audio_player.is_initialized if self.audio_player else False,
                 'speech_recognition': self.speech_recognition.is_initialized if self.speech_recognition else False,
                 'speech_synthesis': self.speech_synthesis.is_initialized if self.speech_synthesis else False,
-                'ai_conversation': self.ai_conversation.is_initialized if self.ai_conversation else False
-            }
+                'ai_conversation': self.ai_conversation.is_initialized if self.ai_conversation else False,
+                'conversation_manager': self.conversation_manager is not None
+            },
+            'conversation': self.conversation_manager.get_conversation_stats() if self.conversation_manager else None
         }
     
     def get_system_health(self) -> Dict[str, Any]:
@@ -545,3 +605,30 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.shutdown()
+    
+    # Conversation State Callbacks
+    
+    def _on_conversation_listening(self, old_state: ConversationState, new_state: ConversationState) -> None:
+        """Handle transition to listening state."""
+        logger.debug("Conversation state: LISTENING - Ready for user input")
+        
+        # Ensure audio capture is active
+        if self.audio_capture and not self.audio_capture.is_capturing:
+            try:
+                self.audio_capture.start_capture()
+            except Exception as e:
+                logger.error(f"Failed to start audio capture on listening state: {e}")
+    
+    def _on_conversation_processing(self, old_state: ConversationState, new_state: ConversationState) -> None:
+        """Handle transition to processing state."""
+        logger.debug("Conversation state: PROCESSING - Analyzing user input")
+        
+        # Update system activity
+        self.last_activity = datetime.now()
+    
+    def _on_conversation_responding(self, old_state: ConversationState, new_state: ConversationState) -> None:
+        """Handle transition to responding state."""
+        logger.debug("Conversation state: RESPONDING - AI generating response")
+        
+        # Update system activity
+        self.last_activity = datetime.now()
