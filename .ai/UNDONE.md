@@ -12,13 +12,13 @@ This document tracks the development roadmap for Astir, a natural conversation v
 ### 1.1 Project Setup & Architecture
 - [x] **Project Structure**: Create clean Python project structure following specifications
 - [x] **Virtual Environment**: Set up Python 3.9-3.11 environment with dependencies
-- [ ] **Configuration System**: Implement YAML-based configuration with environment overrides
+- [x] **Configuration System**: Implement YAML-based configuration with environment overrides
 - [x] **Logging Framework**: Set up structured logging with rotation and levels
 - [x] **Error Handling**: Create custom exception hierarchy and error recovery patterns
 
 ### 1.2 Core Design Patterns Implementation
 - [x] **Event Bus Service**: Observer pattern for loose coupling between components
-- [ ] **Configuration Manager**: Singleton pattern for centralized configuration
+- [x] **Configuration Manager**: Singleton pattern for centralized configuration
 - [ ] **Service Factory**: Factory pattern for service instantiation and dependency injection
 - [ ] **Strategy Interfaces**: Abstract base classes for STT, TTS, and AI services
 
@@ -219,7 +219,7 @@ This document tracks the development roadmap for Astir, a natural conversation v
 ### 🎯 **IMMEDIATE NEXT STEPS**
 1. ✅ **Set up project structure** following the technical specifications
 2. ✅ **Implement core event bus** for component communication
-3. **Create configuration management** system with YAML support
+3. ✅ **Create configuration management** system with YAML support
 4. **Build basic audio capture** service with VAD
 5. **Integrate Whisper STT** with strategy pattern
 
@@ -251,4 +251,4 @@ The project will be considered successful when:
 
 ---
 
-*Last Updated: Phase 1 Complete - Event Bus Service Implemented! 🎉*
+*Last Updated: Core Foundation Complete - Event Bus + Configuration Manager! 🎉*
