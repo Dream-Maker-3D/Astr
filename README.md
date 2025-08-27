@@ -6,14 +6,15 @@ A natural conversation voice assistant built with Python, OpenRouter AI, Whisper
 
 ### ✅ **Completed Components:**
 - **Event Bus Service** - Observer pattern implementation for decoupled communication
+- **Configuration Manager** - Singleton pattern for centralized configuration management
 - **Exception Hierarchy** - Comprehensive error handling system
 - **Project Structure** - Clean architecture following SOLID principles
-- **Unit Tests** - Comprehensive test coverage for Event Bus Service
+- **Unit Tests** - Comprehensive test coverage for core services
 - **BDD Planning** - Complete feature specifications and design documents
 
 ### 🔄 **In Progress:**
-- Configuration Manager (Singleton pattern)
 - Audio Capture Service (Strategy pattern)
+- Service Factory (Factory pattern)
 
 ### 📋 **Next Phase:**
 - Audio Processing Pipeline
@@ -118,15 +119,16 @@ pytest tests/unit/core/test_event_bus.py::TestEventBusPerformance -v
 
 ### **✅ Phase 1: Core Foundation (COMPLETED)**
 - [x] **Event Bus Service** - Observer pattern for component communication
+- [x] **Configuration Manager** - Singleton pattern for centralized configuration
 - [x] **Exception Hierarchy** - Structured error handling
 - [x] **Project Structure** - Clean architecture setup
 - [x] **Unit Tests** - Comprehensive test coverage
 - [x] **Main Entry Point** - Basic application startup
 
-### **🔄 Phase 2: Configuration & Audio (IN PROGRESS)**
-- [ ] **Configuration Manager** - YAML-based configuration system
+### **🔄 Phase 2: Audio Processing (IN PROGRESS)**
 - [ ] **Audio Capture Service** - Microphone input with VAD
 - [ ] **Audio Output Service** - Speaker output management
+- [ ] **Service Factory** - Factory pattern for service instantiation
 
 ### **📋 Phase 3: Speech Processing (PLANNED)**
 - [ ] **Speech Recognition Service** - Whisper STT integration

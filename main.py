@@ -16,6 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.core.event_bus import EventBusService, EventTypes
+from src.core.config_manager import config_manager
 from src.utils.exceptions import AstirError, InitializationError
 
 
@@ -56,6 +57,18 @@ def main():
         # Check environment
         check_environment()
         logger.info("✅ Environment check passed")
+        
+        # Load configuration
+        try:
+            config = config_manager.load_configuration()
+            logger.info("✅ Configuration loaded successfully")
+            logger.info(f"   - AI Model: {config.ai.model}")
+            logger.info(f"   - Log Level: {config.system.log_level}")
+        except Exception as e:
+            logger.warning(f"⚠️  Configuration loading failed, using defaults: {e}")
+            # Create minimal default configuration for testing
+            from src.core.config_manager import Configuration
+            config = Configuration()
         
         # Initialize Event Bus
         event_bus = EventBusService()
