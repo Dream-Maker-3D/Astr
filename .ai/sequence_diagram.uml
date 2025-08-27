@@ -1,0 +1,101 @@
+@startuml Voice Assistant Sequence Diagram
+
+participant User
+participant VoiceAssistantFacade
+participant AudioCaptureService
+participant SpeechRecognitionService
+participant AIConversationService
+participant SpeechSynthesisService
+participant AudioPlayerService
+participant EventBusService
+
+User -> VoiceAssistantFacade: start_conversation()
+activate VoiceAssistantFacade
+
+VoiceAssistantFacade -> AudioCaptureService: initialize()
+activate AudioCaptureService
+AudioCaptureService -> AudioCaptureService: configure_microphone()
+AudioCaptureService --> VoiceAssistantFacade: ready
+deactivate AudioCaptureService
+
+VoiceAssistantFacade -> SpeechRecognitionService: initialize()
+activate SpeechRecognitionService
+SpeechRecognitionService -> SpeechRecognitionService: load_coqui_stt_model()
+SpeechRecognitionService --> VoiceAssistantFacade: ready
+deactivate SpeechRecognitionService
+
+VoiceAssistantFacade -> SpeechSynthesisService: initialize()
+activate SpeechSynthesisService
+SpeechSynthesisService -> SpeechSynthesisService: load_coqui_tts_model()
+SpeechSynthesisService --> VoiceAssistantFacade: ready
+deactivate SpeechSynthesisService
+
+VoiceAssistantFacade -> AIConversationService: initialize()
+activate AIConversationService
+AIConversationService -> AIConversationService: setup_claude_client()
+AIConversationService --> VoiceAssistantFacade: ready
+deactivate AIConversationService
+
+VoiceAssistantFacade -> AudioPlayerService: initialize()
+activate AudioPlayerService
+AudioPlayerService -> AudioPlayerService: configure_speakers()
+AudioPlayerService --> VoiceAssistantFacade: ready
+deactivate AudioPlayerService
+
+VoiceAssistantFacade -> AudioCaptureService: start_recording()
+activate AudioCaptureService
+
+loop Continuous Voice Processing
+    AudioCaptureService -> EventBusService: publish(AUDIO_DATA_RECEIVED, audio_chunk)
+    activate EventBusService
+    EventBusService -> SpeechRecognitionService: handle_audio_data(audio_chunk)
+    deactivate EventBusService
+    
+    activate SpeechRecognitionService
+    SpeechRecognitionService -> SpeechRecognitionService: preprocess_audio(audio_chunk)
+    SpeechRecognitionService -> SpeechRecognitionService: transcribe_with_coqui_stt(audio_chunk)
+    
+    alt Speech Detected
+        SpeechRecognitionService -> EventBusService: publish(SPEECH_RECOGNIZED, transcription)
+        activate EventBusService
+        EventBusService -> AIConversationService: handle_speech_input(transcription)
+        deactivate EventBusService
+        
+        activate AIConversationService
+        AIConversationService -> AIConversationService: send_to_claude_api(transcription)
+        AIConversationService -> EventBusService: publish(AI_RESPONSE_RECEIVED, response)
+        deactivate AIConversationService
+        
+        activate EventBusService
+        EventBusService -> SpeechSynthesisService: handle_ai_response(response)
+        deactivate EventBusService
+        
+        activate SpeechSynthesisService
+        SpeechSynthesisService -> SpeechSynthesisService: synthesize_with_coqui_tts(response)
+        SpeechSynthesisService -> EventBusService: publish(AUDIO_SYNTHESIS_COMPLETE, audio_data)
+        deactivate SpeechSynthesisService
+        
+        activate EventBusService
+        EventBusService -> AudioPlayerService: handle_synthesized_audio(audio_data)
+        deactivate EventBusService
+        
+        activate AudioPlayerService
+        AudioPlayerService -> AudioPlayerService: play_audio_through_speakers(audio_data)
+        AudioPlayerService -> User: Audio Response
+        AudioPlayerService -> EventBusService: publish(AUDIO_PLAYBACK_COMPLETE)
+        deactivate AudioPlayerService
+        
+    else No Speech Detected
+        SpeechRecognitionService -> SpeechRecognitionService: continue_listening()
+    end
+    
+    deactivate SpeechRecognitionService
+end
+
+User -> VoiceAssistantFacade: stop_conversation()
+VoiceAssistantFacade -> AudioCaptureService: stop_recording()
+deactivate AudioCaptureService
+
+deactivate VoiceAssistantFacade
+
+@enduml

@@ -1,0 +1,62 @@
+audio:
+  input:
+    device_id: null  # Auto-detect
+    sample_rate: 16000
+    channels: 1
+    chunk_size: 1024
+    buffer_size: 4096
+    continuous_listening: true
+  output:
+    device_id: null  # Auto-detect
+    sample_rate: 22050
+    volume: 0.8
+
+speech:
+  recognition:
+    provider: "whisper"
+    model: "base"
+    language: "en"
+    confidence_threshold: 0.6
+    continuous_mode: true
+  synthesis:
+    provider: "coqui"
+    model: "tts_models/multilingual/multi-dataset/xtts_v2"
+    voice: null
+    speaker_id: "Daisy Studious"  # Young, intelligent female voice
+    speaking_rate: 1.1
+    pitch: 0.0
+    naturalness: "high"
+
+ai:
+  provider: "openrouter"
+  api_key_env: "OPENROUTER_API_KEY"
+  model: "anthropic/claude-3.5-haiku"
+  max_tokens: 150
+  temperature: 0.8
+  timeout: 20
+  conversation_mode: true
+  system_prompt: |
+    You are having a natural spoken conversation. Be concise and 
+    conversational. Respond like a knowledgeable person, not an AI assistant.
+    Use natural speech patterns, contractions, and keep responses brief 
+    unless asked for details. Handle interruptions and corrections gracefully 
+    without acknowledging them explicitly.
+
+conversation:
+  mode: "natural"
+  activation_method: "none"
+  max_context_length: 15
+  context_window_seconds: 600
+  interrupt_detection: true
+  interruption_response_ms: 50
+  voice_activity_threshold: 0.042
+  turn_taking_pause_ms: 1500
+  response_style: "concise"
+  formality: "casual"
+
+system:
+  log_level: "INFO"
+  log_file: "voice_assistant.log"
+  performance_monitoring: true
+  health_check_interval: 60
+  silent_startup: true

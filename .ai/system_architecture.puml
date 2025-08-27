@@ -1,0 +1,128 @@
+@startuml Voice AI Assistant Architecture
+
+!define RECTANGLE class
+
+package "Audio Layer" {
+    RECTANGLE AudioCapture {
+        +startRecording()
+        +stopRecording()
+        +getAudioStream(): Stream<AudioData>
+        -microphoneDevice: MicDevice
+        -audioConfig: AudioConfig
+    }
+    
+    RECTANGLE AudioPlayer {
+        +playAudio(audioData: AudioData)
+        +stopPlayback()
+        +setVolume(level: float)
+        -speakerDevice: SpeakerDevice
+        -audioBuffer: CircularBuffer
+    }
+    
+    RECTANGLE AudioProcessor {
+        +processAudioStream(stream: Stream<AudioData>): Stream<ProcessedAudio>
+        +applyNoiseReduction(audio: AudioData): AudioData
+        +normalizeVolume(audio: AudioData): AudioData
+    }
+}
+
+package "Speech Processing Layer" {
+    RECTANGLE SpeechToTextService {
+        +transcribeStream(audioStream: Stream<AudioData>): Stream<TextChunk>
+        +getTranscriptionAccuracy(): float
+        -apiClient: STTClient
+        -streamingConfig: StreamingConfig
+    }
+    
+    RECTANGLE TextToSpeechService {
+        +synthesizeStream(textStream: Stream<String>): Stream<AudioData>
+        +setVoiceProfile(profile: VoiceProfile)
+        -apiClient: TTSClient
+        -voiceConfig: VoiceConfig
+    }
+    
+    RECTANGLE VoiceActivityDetector {
+        +detectSpeech(audioData: AudioData): boolean
+        +getSpeechProbability(): float
+        -threshold: float
+        -sensitivity: float
+    }
+}
+
+package "LLM Integration Layer" {
+    RECTANGLE LLMService {
+        +streamConversation(messages: List<Message>): Stream<String>
+        +sendMessage(message: String): Stream<String>
+        -apiClient: AnthropicClient
+        -conversationConfig: LLMConfig
+    }
+    
+    RECTANGLE ConversationManager {
+        +processUserInput(text: String): Stream<String>
+        +maintainContext(messages: List<Message>)
+        +handleInterruption()
+        -conversationHistory: CircularBuffer<Message>
+        -contextWindow: int
+    }
+    
+    RECTANGLE MessageFormatter {
+        +formatUserMessage(text: String): Message
+        +formatAssistantMessage(text: String): Message
+        +addSystemPrompt(prompt: String): Message
+    }
+}
+
+package "Core Application Layer" {
+    RECTANGLE VoiceAssistant {
+        +start()
+        +stop()
+        +pause()
+        +resume()
+        -state: AssistantState
+        -eventBus: EventBus
+    }
+    
+    RECTANGLE EventBus {
+        +subscribe(event: EventType, handler: EventHandler)
+        +publish(event: Event)
+        +unsubscribe(eventType: EventType, handler: EventHandler)
+        -subscribers: Map<EventType, List<EventHandler>>
+    }
+    
+    RECTANGLE ConfigurationManager {
+        +loadConfiguration(): Config
+        +saveConfiguration(config: Config)
+        +getAudioConfig(): AudioConfig
+        +getLLMConfig(): LLMConfig
+        +getVoiceConfig(): VoiceConfig
+    }
+    
+    RECTANGLE StateManager {
+        +getCurrentState(): AssistantState
+        +transitionTo(newState: AssistantState)
+        +canTransition(from: AssistantState, to: AssistantState): boolean
+        -currentState: AssistantState
+        -stateTransitions: Map<AssistantState, List<AssistantState>>
+    }
+}
+
+' Relationships
+AudioCapture --> AudioProcessor : streams audio
+AudioProcessor --> VoiceActivityDetector : detects speech
+AudioProcessor --> SpeechToTextService : converts to text
+SpeechToTextService --> ConversationManager : sends transcription
+ConversationManager --> LLMService : requests response
+LLMService --> TextToSpeechService : streams response text
+TextToSpeechService --> AudioPlayer : generates audio
+ConversationManager --> MessageFormatter : formats messages
+
+VoiceAssistant --> EventBus : publishes/subscribes events
+VoiceAssistant --> StateManager : manages state transitions
+VoiceAssistant --> ConfigurationManager : loads configuration
+
+EventBus --> AudioCapture : audio events
+EventBus --> AudioPlayer : playback events
+EventBus --> ConversationManager : conversation events
+EventBus --> StateManager : state change events
+
+@enduml
