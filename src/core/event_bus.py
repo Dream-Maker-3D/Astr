@@ -18,12 +18,21 @@ from queue import Queue, Empty
 from typing import Dict, List, Callable, Any, Optional, Set
 from weakref import WeakSet
 
-from ..utils.exceptions import (
-    EventBusError, 
-    EventValidationError, 
-    SubscriptionError, 
-    PublishingError
-)
+try:
+    from utils.exceptions import (
+        EventBusError, 
+        EventValidationError, 
+        SubscriptionError, 
+        PublishingError
+    )
+except ImportError:
+    # Fallback for relative imports
+    from ..utils.exceptions import (
+        EventBusError, 
+        EventValidationError, 
+        SubscriptionError, 
+        PublishingError
+    )
 
 
 @dataclass

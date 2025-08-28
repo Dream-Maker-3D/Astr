@@ -8,11 +8,24 @@ following the BDD scenarios defined in the feature specifications.
 import pytest
 import time
 import threading
+import sys
+import os
 from unittest.mock import Mock, patch
 from concurrent.futures import Future
 
-from src.core.event_bus import EventBusService, EventTypes, Event, EventMetadata
-from src.utils.exceptions import EventBusError, EventValidationError, SubscriptionError
+# Add src to path for imports
+project_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+src_path = os.path.join(project_root, 'src')
+sys.path.insert(0, src_path)
+
+try:
+    from core.event_bus import EventBusService, EventTypes, Event, EventMetadata
+    from utils.exceptions import EventBusError, EventValidationError, SubscriptionError
+except ImportError as e:
+    print(f"Import error: {e}")
+    print(f"Python path: {sys.path}")
+    print(f"Current directory: {os.getcwd()}")
+    raise
 
 
 class TestEventBusInitialization:
