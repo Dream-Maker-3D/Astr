@@ -71,7 +71,7 @@ class VoiceActivityDetector:
     
     def detect_speech(self, audio_data: np.ndarray) -> tuple[bool, float]:
         """
-        Detect speech in audio data.
+        Detect speech in audio data using improved VAD.
         
         Args:
             audio_data: Audio samples as numpy array
@@ -88,12 +88,24 @@ class VoiceActivityDetector:
         # Use moving average for stability
         avg_rms = np.mean(self.history) if self.history else 0.0
         
-        # Detect speech if RMS exceeds threshold
-        is_speech = avg_rms > self.threshold
-        
-        # Debug logging for speech detection
-        if avg_rms > 0.010:  # Log when there's some audio activity
-            self._logger.debug(f"Audio activity: RMS={avg_rms:.4f}, threshold={self.threshold:.4f}, speech={is_speech}")
+        # Improved speech detection: look for significant energy changes
+        if len(self.history) >= 5:
+            # Calculate variance to detect speech-like patterns
+            recent_history = list(self.history)[-5:]
+            variance = np.var(recent_history)
+            
+            # Speech has both sufficient energy AND variability
+            energy_sufficient = avg_rms > self.threshold
+            has_variability = variance > 0.00001  # Speech has natural variation
+            
+            is_speech = energy_sufficient and has_variability
+            
+            # Debug logging for improved speech detection
+            if avg_rms > 0.015:  # Log when there's some audio activity
+                self._logger.debug(f"Audio: RMS={avg_rms:.4f}, var={variance:.6f}, thresh={self.threshold:.4f}, speech={is_speech}")
+        else:
+            # Not enough history yet, use simple threshold
+            is_speech = avg_rms > self.threshold
         
         return is_speech, rms
     
@@ -547,7 +559,7 @@ class AudioCaptureService:
                 sample_rate=self._config.input_sample_rate,
                 channels=1,
                 timestamp=self._speech_start_time,
-                duration=speech_duration,
+                duration_ms=speech_duration * 1000,  # Convert to milliseconds
                 is_speech=True,
                 rms_level=np.sqrt(np.mean(combined_audio ** 2)) if len(combined_audio) > 0 else 0.0
             )

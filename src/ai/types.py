@@ -125,6 +125,21 @@ class ConversationTurn:
         """Estimate token count for this turn."""
         # Rough estimation: ~4 characters per token
         return len(self.message) // 4
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary representation."""
+        return {
+            'turn_id': self.turn_id,
+            'speaker': self.speaker.value,
+            'message': self.message,
+            'timestamp': self.timestamp.isoformat(),
+            'metadata': {
+                'confidence': self.metadata.confidence,
+                'processing_time': self.metadata.processing_time,
+                'model_used': self.metadata.model_used,
+                'token_count': self.metadata.token_count
+            }
+        }
 
 
 @dataclass

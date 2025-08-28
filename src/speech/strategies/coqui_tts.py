@@ -406,7 +406,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         duration = max(0.5, word_count / 2.5)  # ~150 words per minute
         
         # Generate mock audio (sine wave with some variation)
-        sample_rate = self._config.sample_rate
+        sample_rate = int(self._config.sample_rate)  # Convert to int to avoid numpy.float32 issues
         samples = int(duration * sample_rate)
         
         # Create a simple sine wave with some variation

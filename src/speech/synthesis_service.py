@@ -90,8 +90,13 @@ class SpeechSynthesisService:
                 if not self._config.validate():
                     raise ValueError("Invalid speech synthesis configuration")
                 
+                # Initialize TTS strategy
+                from .strategies.coqui_tts import CoquiTTSStrategy
+                tts_strategy = CoquiTTSStrategy(self._config)
+                self.set_strategy(tts_strategy)
+                
                 # Subscribe to events
-                self._event_bus.subscribe("AI_RESPONSE_READY", self._handle_ai_response)
+                self._event_bus.subscribe("ai.response.ready", self._handle_ai_response)
                 self._event_bus.subscribe("SYNTHESIS_REQUEST", self._handle_synthesis_request)
                 
                 # Start worker thread
@@ -288,7 +293,7 @@ class SpeechSynthesisService:
             
             # Unsubscribe from events
             try:
-                self._event_bus.unsubscribe("AI_RESPONSE_READY", self._handle_ai_response)
+                self._event_bus.unsubscribe("ai.response.ready", self._handle_ai_response)
                 self._event_bus.unsubscribe("SYNTHESIS_REQUEST", self._handle_synthesis_request)
             except Exception as e:
                 logger.warning(f"Error unsubscribing from events: {e}")

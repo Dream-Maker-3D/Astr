@@ -196,17 +196,20 @@ class SpeechRecognitionService:
             # Publish transcription started event
             self._publish_event(STTEventTypes.TRANSCRIPTION_STARTED, {
                 'audio_id': audio_id,
-                'audio_duration': audio_data.duration,
+                'audio_duration': audio_data.duration_ms / 1000.0,  # Convert ms to seconds
                 'timestamp': datetime.now(),
                 'model_info': {
                     'strategy': self._stt_strategy.__class__.__name__,
-                    'language': self._config.language
+                    'language': self._config.recognition_language
                 }
             })
             
             # Perform transcription
             result = self._stt_strategy.transcribe_audio(audio_data)
             result.audio_id = audio_id
+            
+            # Debug logging for transcription result
+            self._logger.info(f"✅ Transcription completed: '{result.text}' (confidence: {result.confidence:.3f})")
             
             # Update statistics
             processing_time = time.time() - start_time
@@ -362,7 +365,7 @@ class SpeechRecognitionService:
         # Extract audio data from the event
         audio_data = event_data.get('audio_data')
         if audio_data:
-            self._logger.info(f"Processing speech audio: {audio_data.duration:.2f}s, {len(audio_data.data)} samples")
+            self._logger.info(f"Processing speech audio: {audio_data.duration_ms/1000.0:.2f}s, {len(audio_data.data)} samples")
             # Queue the audio for transcription
             try:
                 self._processing_queue.put(audio_data, timeout=1.0)

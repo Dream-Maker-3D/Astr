@@ -340,7 +340,7 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
         self.event_bus.subscribe("SPEECH_DETECTED", self._handle_speech_detected)
         self.event_bus.subscribe("TRANSCRIPTION_READY", self._handle_transcription_ready)
         self.event_bus.subscribe("AI_PROCESSING_STARTED", self._handle_ai_processing)
-        self.event_bus.subscribe("AI_RESPONSE_READY", self._handle_ai_response)
+        self.event_bus.subscribe("ai.response.ready", self._handle_ai_response)
         self.event_bus.subscribe("SYNTHESIS_STARTED", self._handle_synthesis_started)
         self.event_bus.subscribe("SYNTHESIS_COMPLETED", self._handle_synthesis_completed)
         

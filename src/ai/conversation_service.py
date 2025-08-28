@@ -134,6 +134,11 @@ class ConversationManager:
             
             logger.info("Conversation history cleared")
     
+    def get_recent_turns(self, count: int = 3) -> List[ConversationTurn]:
+        """Get the most recent conversation turns."""
+        with self.lock:
+            return self.conversation_history[-count:] if self.conversation_history else []
+    
     def get_conversation_summary(self) -> Dict[str, Any]:
         """Get a summary of the current conversation."""
         with self.lock:
@@ -242,11 +247,12 @@ class AIConversationService:
     
     def _handle_transcription_event(self, event_data: Dict[str, Any]) -> None:
         """Handle transcription ready events from STT service."""
+        logger.info(f"🎯 Received transcription event: '{event_data.get('text', 'N/A')}' (confidence: {event_data.get('confidence', 0.0):.3f})")
         try:
             text = event_data.get('text', '')
             confidence = event_data.get('confidence', 0.0)
             
-            if text and confidence > 0.5:  # Only process high-confidence transcriptions
+            if text and confidence > 0.05:  # Process transcriptions with reasonable confidence
                 logger.info(f"Processing transcription: '{text}' (confidence: {confidence})")
                 
                 # Create conversation request
