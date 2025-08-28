@@ -163,17 +163,10 @@ class AudioPlayerService:
         
         if not PYAUDIO_AVAILABLE:
             self._logger.warning("PyAudio not available - audio playback disabled")
-            # Create a mock device for testing
-            self._selected_device = AudioOutputDevice(
-                device_id=0,
-                name="Mock Audio Output Device",
-                channels=2,
-                sample_rate=22050,
-                is_output=True,
-                is_default=True
-            )
-            self._is_initialized = True
-            return True
+            # PyAudio not available - cannot initialize audio output
+            self._selected_device = None
+            self._is_initialized = False
+            return False
         
         try:
             # Initialize PyAudio

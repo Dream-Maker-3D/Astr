@@ -163,9 +163,8 @@ class ServiceFactory(IServiceFactory):
         self._is_initialized = False
         self._is_disposed = False
         
-        # Mock services for testing
-        self._mock_services: Dict[Type, Any] = {}
-        self._use_mocks = False
+        # Service registry
+        self._service_registry: Dict[Type, Type] = {}
     
     def initialize(self) -> bool:
         """
@@ -267,9 +266,7 @@ class ServiceFactory(IServiceFactory):
         if not self._is_initialized:
             raise ServiceFactoryError("Service factory not initialized")
         
-        # Check for mock service
-        if self._use_mocks and service_type in self._mock_services:
-            return self._mock_services[service_type]
+
         
         # Resolve interface to concrete type
         concrete_type = self._resolve_concrete_type(service_type)
@@ -305,9 +302,7 @@ class ServiceFactory(IServiceFactory):
         if self._is_disposed:
             return None
         
-        # Check for mock service
-        if self._use_mocks and service_type in self._mock_services:
-            return self._mock_services[service_type]
+
         
         # Resolve interface to concrete type
         concrete_type = self._resolve_concrete_type(service_type)
@@ -364,26 +359,7 @@ class ServiceFactory(IServiceFactory):
         
         return False
     
-    def register_mock(self, service_type: Type[T], mock_instance: T) -> None:
-        """
-        Register a mock service for testing.
-        
-        Args:
-            service_type: The service type to mock
-            mock_instance: The mock instance to use
-        """
-        self._mock_services[service_type] = mock_instance
-        self._logger.debug(f"Registered mock service: {service_type.__name__}")
-    
-    def enable_mocks(self, enabled: bool = True) -> None:
-        """
-        Enable or disable mock services.
-        
-        Args:
-            enabled: Whether to use mock services
-        """
-        self._use_mocks = enabled
-        self._logger.debug(f"Mock services {'enabled' if enabled else 'disabled'}")
+
     
     def get_registered_services(self) -> List[Type]:
         """Get list of all registered service types."""

@@ -111,7 +111,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             )
         ]
         
-        logger.info("Coqui TTS Strategy created (Mock mode)")
+        logger.info("Coqui TTS Strategy created")
     
     def initialize(self) -> bool:
         """
@@ -141,26 +141,15 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                         logger.info(f"Supported languages: {languages[:10]}...")  # Show first 10
                 
             else:
-                # Fallback to mock mode
-                logger.warning("Coqui TTS not available, using mock implementation")
-                
-                # Mock model initialization
-                self._model = {
-                    'name': self._config.model_name,
-                    'device': self._config.device,
-                    'loaded': True,
-                    'capabilities': {
-                        'voice_cloning': True,
-                        'multilingual': True,
-                        'streaming': True
-                    }
-                }
+                # Coqui TTS not available
+                logger.error("Coqui TTS not available - cannot initialize TTS strategy")
+                return False
             
-            # Load voice samples (mock)
+            # Load voice samples
             self._load_voice_samples()
             
             self._is_initialized = True
-            logger.info("Coqui TTS Strategy initialized successfully (Mock mode)")
+            logger.info("Coqui TTS Strategy initialized successfully")
             return True
             
         except Exception as e:
@@ -242,13 +231,8 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                 logger.debug(f"Real synthesis complete: {duration:.2f}s audio in {synthesis_time:.2f}s")
                 
             else:
-                # Fallback to mock synthesis
-                audio_data = self._generate_mock_audio(text, voice_id)
-                synthesis_time = time.time() - start_time
-                
-                # Calculate duration (mock: ~150 words per minute)
-                word_count = len(text.split())
-                duration = max(0.5, word_count / 2.5)  # Minimum 0.5s
+                # Real TTS not available
+                raise AudioGenerationError("Coqui TTS model not properly initialized")
             
             # Create metadata
             metadata = SynthesisMetadata(
@@ -312,8 +296,8 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         chunk_index = 0
         for text_chunk in text_stream:
             try:
-                # Mock streaming synthesis
-                chunk_data = self._generate_mock_audio(text_chunk, voice_id)
+                # Real streaming synthesis not implemented yet
+                raise NotImplementedError("Streaming synthesis not yet implemented")
                 
                 # Calculate chunk duration
                 word_count = len(text_chunk.split())
@@ -390,14 +374,13 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         logger.info("Coqui TTS Strategy shutdown complete")
     
     def _load_voice_samples(self) -> None:
-        """Load voice samples for voice cloning (mock implementation)."""
-        logger.info("Loading voice samples (Mock mode)")
+        """Load voice samples for voice cloning."""
+        logger.info("Loading voice samples")
         
-        # Mock voice sample loading
+        # Voice samples are built into XTTS-v2 model
         for voice in self._available_voices:
             self._voice_samples[voice.voice_id] = {
                 'sample_path': f"./voices/{voice.voice_id}.wav",
-                'embedding': np.random.rand(512),  # Mock voice embedding
                 'characteristics': {
                     'gender': voice.gender,
                     'age': voice.age_group,
@@ -407,59 +390,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         
         logger.info(f"Loaded {len(self._voice_samples)} voice samples")
     
-    def _generate_mock_audio(self, text: str, voice_id: str) -> bytes:
-        """
-        Generate mock audio data for testing.
-        
-        Args:
-            text (str): Text to synthesize
-            voice_id (str): Voice identifier
-            
-        Returns:
-            bytes: Mock audio data
-        """
-        # Calculate audio length based on text
-        word_count = len(text.split())
-        duration = max(0.5, word_count / 2.5)  # ~150 words per minute
-        
-        # Generate mock audio (sine wave with some variation)
-        sample_rate = int(self._config.sample_rate)  # Convert to int to avoid numpy.float32 issues
-        samples = int(duration * sample_rate)
-        
-        # Create a simple sine wave with some variation
-        t = np.linspace(0, duration, samples)
-        
-        # Base frequency varies by voice (higher frequencies for young, happy voices)
-        voice_frequencies = {
-            'gracie_wise': 200,        # Lower, sultry tone
-            'alison_dietlinde': 210,   # Smooth, alluring
-            'annmarie_nele': 195,      # Sophisticated, sexy (lowest pitch)
-            'asya_anara': 205,         # Exotic, sensual
-            'brenda_stern': 190        # Confident, mature sexy voice
-        }
-        base_freq = voice_frequencies.get(voice_id, 195)  # Default to Annmarie Nele's frequency
-        
-        # Apply voice parameters
-        freq = base_freq * (1 + self._voice_parameters.pitch * 0.2)
-        
-        # Generate audio with some natural variation
-        audio = np.sin(2 * np.pi * freq * t)
-        audio += 0.1 * np.sin(2 * np.pi * freq * 2 * t)  # Harmonic
-        audio += 0.05 * np.random.normal(0, 1, samples)  # Noise for realism
-        
-        # Apply volume
-        audio *= self._voice_parameters.volume * 0.3  # Keep it quiet
-        
-        # Apply speaking rate (affects duration, not pitch)
-        if self._voice_parameters.speaking_rate != 1.0:
-            new_length = int(int(samples) / float(self._voice_parameters.speaking_rate))
-            audio = np.interp(np.linspace(0, samples-1, new_length), 
-                            np.arange(samples), audio)
-        
-        # Convert to bytes (float32)
-        audio_bytes = audio.astype(np.float32).tobytes()
-        
-        return audio_bytes
+
     
     def _is_voice_available(self, voice_id: str) -> bool:
         """Check if voice is available."""
@@ -473,52 +404,4 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         raise VoiceNotFoundError(f"Voice {voice_id} not found")
 
 
-# TODO: Actual Coqui TTS Implementation
-"""
-Future implementation with actual Coqui TTS:
 
-class CoquiTTSStrategy(ISpeechSynthesis):
-    def __init__(self, config: SpeechConfig):
-        self._config = config
-        self._tts_model = None
-        
-    def initialize(self) -> bool:
-        try:
-            from TTS.api import TTS
-            
-            # Initialize Coqui TTS
-            self._tts_model = TTS(
-                model_name=self._config.model_name,
-                progress_bar=False,
-                gpu=self._config.device.startswith('cuda')
-            )
-            
-            return True
-        except Exception as e:
-            logger.error(f"Failed to initialize Coqui TTS: {e}")
-            return False
-    
-    def synthesize_text(self, text: str, voice_id: str) -> SynthesisResult:
-        # Get voice sample
-        speaker_wav = self._voice_samples.get(voice_id)
-        
-        # Synthesize with Coqui TTS
-        audio = self._tts_model.tts(
-            text=text,
-            speaker_wav=speaker_wav,
-            language="en"
-        )
-        
-        # Convert to bytes and create result
-        audio_bytes = (audio * 32767).astype(np.int16).tobytes()
-        
-        return SynthesisResult(
-            audio_data=audio_bytes,
-            sample_rate=self._tts_model.synthesizer.output_sample_rate,
-            duration=len(audio) / self._tts_model.synthesizer.output_sample_rate,
-            voice_id=voice_id,
-            synthesis_time=synthesis_time,
-            metadata=metadata,
-            request_id=request_id
-        )
-"""
