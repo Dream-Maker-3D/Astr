@@ -281,6 +281,9 @@ class VoiceAssistantFacade:
                 logger.error("Failed to initialize Speech Synthesis Service")
                 return False
             
+            # Inject audio player into speech synthesis service
+            self.speech_synthesis.set_audio_player(self.audio_player)
+            
             # Initialize AI Conversation Service
             ai_config = self._create_ai_config()
             self.ai_conversation = AIConversationService(self.event_bus, ai_config)

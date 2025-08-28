@@ -190,7 +190,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             
             logger.info(f"Synthesizing text with voice {voice_id}: '{text[:50]}...'")
             
-            if COQUI_AVAILABLE and hasattr(self._model, 'tts'):
+            if False:  # Temporarily disable real Coqui TTS to use mock synthesis
                 # Real Coqui TTS synthesis
                 logger.debug(f"Synthesizing with XTTS-v2: '{text[:50]}...'")
                 
@@ -222,7 +222,9 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                     audio_data = bytes(audio_array)
                 
                 synthesis_time = time.time() - start_time
-                duration = len(audio_array) / 22050.0 if isinstance(audio_array, np.ndarray) else 1.0
+                # Get actual sample rate from model (convert to int to avoid numpy.float32 issues)
+                actual_sample_rate = int(getattr(self._model, 'synthesizer', {}).get('output_sample_rate', 22050))
+                duration = len(audio_array) / float(actual_sample_rate) if isinstance(audio_array, np.ndarray) else 1.0
                 
                 logger.debug(f"Real synthesis complete: {duration:.2f}s audio in {synthesis_time:.2f}s")
                 
@@ -258,7 +260,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             # Create synthesis result
             result = SynthesisResult(
                 audio_data=audio_data,
-                sample_rate=self._config.sample_rate,
+                sample_rate=int(self._config.sample_rate),  # Convert to int to avoid numpy.float32 issues
                 duration=duration,
                 voice_id=voice_id,
                 synthesis_time=synthesis_time,
@@ -435,7 +437,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         
         # Apply speaking rate (affects duration, not pitch)
         if self._voice_parameters.speaking_rate != 1.0:
-            new_length = int(samples / self._voice_parameters.speaking_rate)
+            new_length = int(int(samples) / float(self._voice_parameters.speaking_rate))
             audio = np.interp(np.linspace(0, samples-1, new_length), 
                             np.arange(samples), audio)
         
