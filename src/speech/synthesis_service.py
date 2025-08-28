@@ -373,7 +373,7 @@ class SpeechSynthesisService:
             if self._audio_player:
                 try:
                     audio_clip = result.to_audio_clip()
-                    self._audio_player.queue_audio(audio_clip, request.priority)
+                    self._audio_player.play_audio(audio_clip.data, audio_clip.sample_rate)
                 except Exception as e:
                     logger.error(f"Failed to queue audio for playback: {e}")
             

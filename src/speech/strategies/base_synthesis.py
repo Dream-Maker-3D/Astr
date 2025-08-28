@@ -122,11 +122,19 @@ class SynthesisResult:
     def to_audio_clip(self) -> 'AudioClip':
         """Convert to AudioClip for playback."""
         try:
-            from src.audio.player_service import AudioClip
+            from src.audio.player_service import AudioClip, PlaybackPriority
+            import numpy as np
+            import uuid
+            import time
+            
             return AudioClip(
-                data=self.audio_data,
+                clip_id=str(uuid.uuid4()),
+                data=self.audio_data,  # Pass raw bytes directly
                 sample_rate=self.sample_rate,
-                duration=self.duration,
+                channels=1,  # Assuming mono audio
+                priority=PlaybackPriority.NORMAL,
+                duration_seconds=self.duration,
+                timestamp=time.time(),
                 metadata={'voice_id': self.voice_id, 'synthesis_time': self.synthesis_time}
             )
         except ImportError:

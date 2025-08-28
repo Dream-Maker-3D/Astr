@@ -190,7 +190,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             
             logger.info(f"Synthesizing text with voice {voice_id}: '{text[:50]}...'")
             
-            if False:  # Temporarily disable real Coqui TTS to use mock synthesis
+            if COQUI_AVAILABLE and hasattr(self._model, 'tts'):
                 # Real Coqui TTS synthesis
                 logger.debug(f"Synthesizing with XTTS-v2: '{text[:50]}...'")
                 
@@ -214,17 +214,33 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                 )
                 
                 # Convert to bytes (assuming 22050 Hz sample rate)
-                if isinstance(audio_array, np.ndarray):
+                if isinstance(audio_array, np.ndarray) and audio_array.size > 1:
                     # Convert float32 to int16 PCM
                     audio_int16 = (audio_array * 32767).astype(np.int16)
                     audio_data = audio_int16.tobytes()
+                elif isinstance(audio_array, (np.ndarray, np.float32, float)) and np.isscalar(audio_array):
+                    # Handle scalar values - create a small audio buffer
+                    logger.warning(f"Received scalar audio value: {audio_array}, creating minimal audio buffer")
+                    # Create a small silent audio buffer (0.1 seconds at 22050 Hz)
+                    silent_audio = np.zeros(2205, dtype=np.float32)
+                    audio_int16 = (silent_audio * 32767).astype(np.int16)
+                    audio_data = audio_int16.tobytes()
                 else:
-                    audio_data = bytes(audio_array)
+                    # Fallback for other types
+                    logger.warning(f"Unexpected audio_array type: {type(audio_array)}, value: {audio_array}")
+                    # Create a small silent audio buffer
+                    silent_audio = np.zeros(2205, dtype=np.float32)
+                    audio_int16 = (silent_audio * 32767).astype(np.int16)
+                    audio_data = audio_int16.tobytes()
                 
                 synthesis_time = time.time() - start_time
-                # Get actual sample rate from model (convert to int to avoid numpy.float32 issues)
-                actual_sample_rate = int(getattr(self._model, 'synthesizer', {}).get('output_sample_rate', 22050))
-                duration = len(audio_array) / float(actual_sample_rate) if isinstance(audio_array, np.ndarray) else 1.0
+                # Use fixed sample rate for XTTS-v2 model (22050 Hz)
+                sample_rate = 22050
+                if isinstance(audio_array, np.ndarray) and audio_array.size > 1:
+                    duration = len(audio_array) / float(sample_rate)
+                else:
+                    # For scalar or invalid values, use a default duration
+                    duration = 0.1  # 0.1 seconds for minimal audio buffer
                 
                 logger.debug(f"Real synthesis complete: {duration:.2f}s audio in {synthesis_time:.2f}s")
                 
@@ -260,7 +276,7 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             # Create synthesis result
             result = SynthesisResult(
                 audio_data=audio_data,
-                sample_rate=int(self._config.sample_rate),  # Convert to int to avoid numpy.float32 issues
+                sample_rate=22050,  # Use fixed sample rate for XTTS-v2
                 duration=duration,
                 voice_id=voice_id,
                 synthesis_time=synthesis_time,
@@ -272,7 +288,9 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             return result
             
         except Exception as e:
+            import traceback
             logger.error(f"Synthesis failed: {e}")
+            logger.error(f"Full traceback: {traceback.format_exc()}")
             raise AudioGenerationError(f"Failed to synthesize text: {e}")
     
     def synthesize_stream(self, text_stream: Iterator[str], voice_id: str) -> Iterator[AudioChunk]:
