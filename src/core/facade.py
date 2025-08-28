@@ -528,11 +528,11 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
             'error_count': self.error_count,
             'last_activity': self.last_activity.isoformat() if self.last_activity else None,
             'services': {
-                'event_bus': self.event_bus.is_running if self.event_bus else False,
-                'audio_capture': self.audio_capture.is_initialized if self.audio_capture else False,
-                'audio_player': self.audio_player.is_initialized if self.audio_player else False,
-                'speech_recognition': self.speech_recognition.is_initialized if self.speech_recognition else False,
-                'speech_synthesis': self.speech_synthesis.is_initialized if self.speech_synthesis else False,
+                'event_bus': self.event_bus._is_running if self.event_bus else False,
+                'audio_capture': self.audio_capture._is_initialized if self.audio_capture else False,
+                'audio_player': self.audio_player._is_initialized if self.audio_player else False,
+                'speech_recognition': self.speech_recognition._is_initialized if self.speech_recognition else False,
+                'speech_synthesis': self.speech_synthesis._is_initialized if self.speech_synthesis else False,
                 'ai_conversation': self.ai_conversation.is_initialized if self.ai_conversation else False,
                 'conversation_manager': self.conversation_manager is not None,
                 'interruption_handler': self.interruption_handler is not None
@@ -552,7 +552,7 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
         healthy = True
         
         # Check core services
-        if not self.event_bus or not self.event_bus.is_running:
+        if not self.event_bus or not self.event_bus._is_running:
             health_checks.append("Event Bus not running")
             healthy = False
         
