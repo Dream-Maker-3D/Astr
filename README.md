@@ -88,8 +88,24 @@ OPENROUTER_API_KEY=your-openrouter-api-key-here
 
 ### **Run the Application:**
 ```bash
+# Normal mode (clean output)
 python main.py
+
+# Debug mode (verbose logging)
+python main.py --debug
+
+# Quiet mode (minimal output)
+python main.py --quiet
+
+# Show help and options
+python main.py --help
 ```
+
+### **Output Modes:**
+- **Normal Mode**: Clean, user-friendly output with essential information
+- **Debug Mode** (`--debug`): Verbose logging with timestamps and detailed system information
+- **Quiet Mode** (`--quiet`): Minimal console output (warnings/errors only), full logging to file
+- **Combined** (`--debug --quiet`): Debug logging to file only, minimal console output
 
 ## 🧪 **Testing**
 

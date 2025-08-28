@@ -12,6 +12,7 @@ import sys
 import logging
 import signal
 import time
+import argparse
 from pathlib import Path
 from typing import Optional
 
@@ -21,19 +22,102 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 from src.core.facade import VoiceAssistantFacade, VoiceAssistantState
 from src.utils.exceptions import AstirError
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler('voice_assistant.log')
-    ]
-)
-logger = logging.getLogger(__name__)
+# Global variables
+logger = None  # Will be configured after parsing arguments
 
 # Global voice assistant instance
 voice_assistant: Optional[VoiceAssistantFacade] = None
+
+
+def configure_logging(debug: bool = False, quiet: bool = False):
+    """Configure logging based on debug and quiet flags."""
+    global logger
+    
+    # Determine log level
+    if quiet:
+        console_level = logging.WARNING
+        file_level = logging.INFO
+    elif debug:
+        console_level = logging.DEBUG
+        file_level = logging.DEBUG
+    else:
+        console_level = logging.INFO
+        file_level = logging.INFO
+    
+    # Create formatters
+    console_formatter = logging.Formatter('%(message)s') if not debug else logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)  # Allow all levels, handlers will filter
+    
+    # Clear existing handlers
+    root_logger.handlers.clear()
+    
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(console_level)
+    console_handler.setFormatter(console_formatter)
+    root_logger.addHandler(console_handler)
+    
+    # File handler
+    file_handler = logging.FileHandler('voice_assistant.log')
+    file_handler.setLevel(file_level)
+    file_handler.setFormatter(file_formatter)
+    root_logger.addHandler(file_handler)
+    
+    # Set specific logger levels for noisy libraries
+    if not debug:
+        logging.getLogger('TTS').setLevel(logging.WARNING)
+        logging.getLogger('whisper').setLevel(logging.WARNING)
+        logging.getLogger('transformers').setLevel(logging.WARNING)
+        logging.getLogger('torch').setLevel(logging.WARNING)
+        logging.getLogger('urllib3').setLevel(logging.WARNING)
+        logging.getLogger('requests').setLevel(logging.WARNING)
+    
+    logger = logging.getLogger(__name__)
+
+
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Astir Voice Assistant - Natural voice conversations with AI',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python main.py                    # Normal mode with minimal output
+  python main.py --debug            # Debug mode with verbose logging
+  python main.py --quiet            # Quiet mode with minimal console output
+  python main.py --debug --quiet    # Debug to file only, minimal console output
+
+The voice assistant provides natural conversation using:
+  Audio Input → Whisper STT → OpenRouter AI → Coqui TTS → Audio Output
+        """
+    )
+    
+    parser.add_argument(
+        '--debug', '-d',
+        action='store_true',
+        help='Enable debug mode with verbose logging'
+    )
+    
+    parser.add_argument(
+        '--quiet', '-q',
+        action='store_true',
+        help='Quiet mode - minimal console output (warnings and errors only)'
+    )
+    
+    parser.add_argument(
+        '--config', '-c',
+        type=str,
+        default='config/default.yaml',
+        help='Path to configuration file (default: config/default.yaml)'
+    )
+    
+    return parser.parse_args()
 
 
 def signal_handler(signum, frame):
@@ -46,24 +130,25 @@ def signal_handler(signum, frame):
     sys.exit(0)
 
 
-def check_environment():
+def check_environment(debug: bool = False):
     """Check environment requirements."""
-    logger.info("🔍 Checking environment requirements...")
+    if debug:
+        logger.info("🔍 Checking environment requirements...")
     
     # Check for OpenRouter API key
     api_key = os.getenv('OPENROUTER_API_KEY')
     if not api_key:
-        logger.warning("⚠️  OPENROUTER_API_KEY not found in environment variables")
-        logger.warning("   Set your API key with: export OPENROUTER_API_KEY='your-key-here'")
+        logger.error("❌ OPENROUTER_API_KEY not found in environment variables")
+        logger.error("   Set your API key with: export OPENROUTER_API_KEY='your-key-here'")
         return False
-    else:
+    elif debug:
         logger.info("✅ OpenRouter API key found")
     
     # Check Python version
     if sys.version_info < (3, 8):
         logger.error("❌ Python 3.8+ required")
         return False
-    else:
+    elif debug:
         logger.info(f"✅ Python {sys.version_info.major}.{sys.version_info.minor} detected")
     
     return True
@@ -183,21 +268,31 @@ def main():
     """Main entry point for the Voice Assistant."""
     global voice_assistant
     
+    # Parse command line arguments
+    args = parse_arguments()
+    
+    # Configure logging based on arguments
+    configure_logging(debug=args.debug, quiet=args.quiet)
+    
     # Setup signal handlers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
     try:
-        # Print banner
-        print_banner()
+        # Print banner (unless quiet mode)
+        if not args.quiet:
+            print_banner()
         
         # Check environment
-        if not check_environment():
+        if not check_environment(debug=args.debug):
             logger.error("❌ Environment check failed")
             sys.exit(1)
         
         # Initialize Voice Assistant
-        logger.info("🚀 Starting Astir Voice Assistant...")
+        if args.debug:
+            logger.info("🚀 Starting Astir Voice Assistant...")
+        elif not args.quiet:
+            print("🚀 Starting Astir Voice Assistant...")
         
         voice_assistant = VoiceAssistantFacade()
         
@@ -206,25 +301,30 @@ def main():
             logger.error("❌ Failed to initialize Voice Assistant")
             sys.exit(1)
         
-        # Print initial status
-        print_system_status(voice_assistant)
+        # Print initial status (unless quiet mode)
+        if not args.quiet:
+            print_system_status(voice_assistant)
         
         # Run interactive mode
         interactive_mode(voice_assistant)
         
     except KeyboardInterrupt:
-        logger.info("Received keyboard interrupt")
+        if args.debug:
+            logger.info("Received keyboard interrupt")
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        import traceback
-        traceback.print_exc()
+        if args.debug:
+            import traceback
+            traceback.print_exc()
     finally:
         # Cleanup
         if voice_assistant:
-            logger.info("🛑 Shutting down Voice Assistant...")
+            if args.debug:
+                logger.info("🛑 Shutting down Voice Assistant...")
             voice_assistant.shutdown()
         
-        logger.info("✅ Astir Voice Assistant shutdown complete")
+        if args.debug:
+            logger.info("✅ Astir Voice Assistant shutdown complete")
 
 
 if __name__ == "__main__":
