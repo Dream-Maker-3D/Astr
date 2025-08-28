@@ -148,7 +148,7 @@ class AudioCaptureService:
         
         # Voice Activity Detection
         self._vad = VoiceActivityDetector(
-            threshold=0.020,  # Balanced threshold for speech detection
+            threshold=0.005,  # Very sensitive threshold for speech detection
             window_size=config.input_chunk_size
         )
         

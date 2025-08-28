@@ -190,7 +190,8 @@ class CoquiTTSStrategy(ISpeechSynthesis):
             
             logger.info(f"Synthesizing text with voice {voice_id}: '{text[:50]}...'")
             
-            if COQUI_AVAILABLE and hasattr(self._model, 'tts'):
+            logger.info(f"🔍 TTS synthesis check: COQUI_AVAILABLE={COQUI_AVAILABLE}, hasattr(model, 'synthesizer')={hasattr(self._model, 'synthesizer')}")
+            if COQUI_AVAILABLE and hasattr(self._model, 'synthesizer'):
                 # Real Coqui TTS synthesis
                 logger.debug(f"Synthesizing with XTTS-v2: '{text[:50]}...'")
                 
@@ -207,11 +208,13 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                 speaker_name = speaker_mapping.get(voice_id, "Annmarie Nele")  # Default to Annmarie Nele
                 
                 # Synthesize with Coqui TTS using the mapped speaker
+                logger.info(f"🎤 Calling TTS with text: '{text[:50]}...', speaker: '{speaker_name}', language: 'en'")
                 audio_array = self._model.tts(
                     text=text,
                     speaker=speaker_name,
                     language="en"
                 )
+                logger.info(f"🎵 TTS returned: type={type(audio_array)}, shape={getattr(audio_array, 'shape', 'no shape')}, size={getattr(audio_array, 'size', 'no size')}")
                 
                 # Convert to bytes (assuming 22050 Hz sample rate)
                 if isinstance(audio_array, np.ndarray) and audio_array.size > 1:

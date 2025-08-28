@@ -419,7 +419,6 @@ class AudioPlayerService:
     
     def _play_clip(self, clip: AudioClip) -> None:
         """Play a single audio clip."""
-        # Simulate playback for testing without PyAudio
         with self._state_lock:
             self._current_clip = clip
             self._is_playing = True
@@ -432,13 +431,44 @@ class AudioPlayerService:
             'timestamp': time.time()
         })
         
-        # Simulate playback time
-        start_time = time.time()
-        while time.time() - start_time < clip.duration_seconds:
-            if self._interrupt_event.is_set():
-                self._interrupt_event.clear()
-                break
-            time.sleep(0.01)
+        try:
+            # Real PyAudio playback
+            self._logger.info(f"🔊 Playing audio clip: {clip.clip_id} ({clip.duration_seconds:.2f}s)")
+            
+            # Convert float32 audio to int16 for PyAudio
+            audio_int16 = (clip.data * 32767).astype(np.int16)
+            
+            # Open PyAudio stream with pulse audio device (device 16)
+            stream = self._pyaudio.open(
+                format=pyaudio.paInt16,
+                channels=clip.channels,
+                rate=clip.sample_rate,
+                output=True,
+                output_device_index=16,  # Use pulse audio device that we verified works
+                frames_per_buffer=1024
+            )
+            
+            # Play audio in chunks
+            chunk_size = 1024
+            audio_bytes = audio_int16.tobytes()
+            
+            for i in range(0, len(audio_bytes), chunk_size * 2):  # *2 for int16 bytes
+                if self._interrupt_event.is_set():
+                    self._interrupt_event.clear()
+                    break
+                chunk = audio_bytes[i:i + chunk_size * 2]
+                stream.write(chunk)
+            
+            # Close stream
+            stream.stop_stream()
+            stream.close()
+            
+            self._logger.info(f"✅ Audio playback completed: {clip.clip_id}")
+            
+        except Exception as e:
+            self._logger.error(f"❌ Audio playback failed: {e}")
+            with self._stats_lock:
+                self._stats['device_errors'] += 1
         
         # Update statistics
         with self._stats_lock:
