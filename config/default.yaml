@@ -1,0 +1,99 @@
+# Astir Voice Assistant Configuration
+# Default configuration with Claribel Dervla as the young, happy girl voice
+
+# Audio Configuration
+audio:
+  input:
+    device_index: -1  # Default input device
+    sample_rate: 16000
+    chunk_size: 1024
+    channels: 1
+    format: "int16"
+  
+  output:
+    device_index: -1  # Default output device  
+    sample_rate: 22050
+    channels: 1
+    volume: 0.8
+
+# Speech Recognition (Whisper STT)
+speech_recognition:
+  model_name: "base"  # Whisper model: tiny, base, small, medium, large
+  device: "auto"      # auto, cpu, cuda
+  language: "en"      # Auto-detect if null
+  temperature: 0.0
+  
+# Speech Synthesis (Coqui TTS)
+speech_synthesis:
+  model_name: "tts_models/multilingual/multi-dataset/xtts_v2"
+  device: "auto"      # auto, cpu, cuda
+  default_voice: "claribel_dervla"  # Young, happy, jubilant girl voice
+  language: "en"
+  sample_rate: 22050
+  
+  # Voice parameters for happy, energetic speech
+  voice_parameters:
+    speaking_rate: 1.1    # Slightly faster for excitement
+    pitch: 0.1           # Slightly higher pitch for youthful sound
+    volume: 0.9          # Clear, confident volume
+    energy: 1.2          # Extra energy for jubilant personality
+
+# AI Conversation (OpenRouter)
+ai:
+  provider: "openrouter"
+  model: "anthropic/claude-3.5-sonnet"
+  api_key: "${OPENROUTER_API_KEY}"
+  max_tokens: 150
+  temperature: 0.7
+  
+  # Personality configuration for young, happy girl
+  personality:
+    style: "enthusiastic"
+    tone: "friendly_excited"
+    age_persona: "young_adult"
+    traits:
+      - "optimistic"
+      - "helpful" 
+      - "energetic"
+      - "curious"
+      - "encouraging"
+    
+    # Response style
+    response_length: "concise"
+    use_contractions: true
+    add_excitement: true
+    enthusiasm_level: "high"
+
+# Conversation Management
+conversation:
+  max_history_length: 10
+  context_window: 4000
+  response_timeout: 30
+  
+  # Natural conversation flow
+  interruption_handling: true
+  voice_activity_detection: true
+  silence_timeout: 3.0
+  
+  # Happy, supportive conversation style
+  conversation_style:
+    greeting_style: "enthusiastic"
+    farewell_style: "warm"
+    error_handling: "encouraging"
+    help_style: "eager"
+
+# System Configuration  
+system:
+  log_level: "INFO"
+  log_file: "voice_assistant.log"
+  max_log_size: "10MB"
+  backup_count: 5
+  
+  # Performance
+  enable_gpu: true
+  model_cache_size: "2GB"
+  
+  # Features
+  enable_streaming: true
+  enable_interruptions: true
+  enable_voice_activity_detection: true

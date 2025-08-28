@@ -57,35 +57,55 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         self._voice_parameters = VoiceParameters()
         self._model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
         
-        # Mock voice database
+        # Available voices with Claribel Dervla as the default young girl voice
         self._available_voices = [
             VoiceInfo(
-                voice_id="female_young",
-                name="Young Female Voice",
+                voice_id="claribel_dervla",
+                name="Claribel Dervla - Young Happy Girl",
                 gender="female",
                 age_group="young",
                 language="en",
-                style="natural",
+                style="happy_jubilant",
                 sample_rate=22050,
                 is_cloned=False
             ),
             VoiceInfo(
-                voice_id="male_mature",
-                name="Mature Male Voice",
-                gender="male",
-                age_group="adult",
-                language="en",
-                style="professional",
-                sample_rate=22050,
-                is_cloned=False
-            ),
-            VoiceInfo(
-                voice_id="female_warm",
-                name="Warm Female Voice",
+                voice_id="daisy_studious",
+                name="Daisy Studious - Bright & Clear",
                 gender="female",
-                age_group="adult",
+                age_group="young",
                 language="en",
-                style="friendly",
+                style="studious_bright",
+                sample_rate=22050,
+                is_cloned=False
+            ),
+            VoiceInfo(
+                voice_id="tammie_ema",
+                name="Tammie Ema - Energetic",
+                gender="female",
+                age_group="young",
+                language="en",
+                style="energetic",
+                sample_rate=22050,
+                is_cloned=False
+            ),
+            VoiceInfo(
+                voice_id="ana_florence",
+                name="Ana Florence - Cheerful",
+                gender="female",
+                age_group="young",
+                language="en",
+                style="cheerful",
+                sample_rate=22050,
+                is_cloned=False
+            ),
+            VoiceInfo(
+                voice_id="tanja_adelina",
+                name="Tanja Adelina - Light & Happy",
+                gender="female",
+                age_group="young",
+                language="en",
+                style="light_happy",
                 sample_rate=22050,
                 is_cloned=False
             )
@@ -174,22 +194,24 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                 # Real Coqui TTS synthesis
                 logger.debug(f"Synthesizing with XTTS-v2: '{text[:50]}...'")
                 
-                # Get voice sample for cloning (if available)
-                speaker_wav = None
-                if voice_id in self._voice_samples and 'sample_path' in self._voice_samples[voice_id]:
-                    speaker_wav = self._voice_samples[voice_id]['sample_path']
+                # Map voice IDs to actual Coqui TTS speaker names
+                speaker_mapping = {
+                    "claribel_dervla": "Claribel Dervla",
+                    "daisy_studious": "Daisy Studious", 
+                    "tammie_ema": "Tammie Ema",
+                    "ana_florence": "Ana Florence",
+                    "tanja_adelina": "Tanja Adelina"
+                }
                 
-                # Synthesize with Coqui TTS
-                if speaker_wav:
-                    # Voice cloning synthesis
-                    audio_array = self._model.tts(
-                        text=text,
-                        speaker_wav=speaker_wav,
-                        language="en"  # TODO: Auto-detect or configure language
-                    )
-                else:
-                    # Use default voice
-                    audio_array = self._model.tts(text=text, language="en")
+                # Get the actual speaker name for Coqui TTS
+                speaker_name = speaker_mapping.get(voice_id, "Claribel Dervla")  # Default to Claribel Dervla
+                
+                # Synthesize with Coqui TTS using the mapped speaker
+                audio_array = self._model.tts(
+                    text=text,
+                    speaker=speaker_name,
+                    language="en"
+                )
                 
                 # Convert to bytes (assuming 22050 Hz sample rate)
                 if isinstance(audio_array, np.ndarray):
@@ -390,13 +412,15 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         # Create a simple sine wave with some variation
         t = np.linspace(0, duration, samples)
         
-        # Base frequency varies by voice
+        # Base frequency varies by voice (higher frequencies for young, happy voices)
         voice_frequencies = {
-            'female_young': 220,  # A3
-            'male_mature': 110,   # A2
-            'female_warm': 196    # G3
+            'claribel_dervla': 240,    # Higher pitch for young, happy girl
+            'daisy_studious': 220,     # Bright, clear voice
+            'tammie_ema': 235,         # Energetic, slightly higher
+            'ana_florence': 225,       # Cheerful, pleasant
+            'tanja_adelina': 245       # Light and happy, highest pitch
         }
-        base_freq = voice_frequencies.get(voice_id, 165)  # Default F3
+        base_freq = voice_frequencies.get(voice_id, 240)  # Default to Claribel Dervla's frequency
         
         # Apply voice parameters
         freq = base_freq * (1 + self._voice_parameters.pitch * 0.2)
