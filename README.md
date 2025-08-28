@@ -2,6 +2,8 @@
 
 A natural conversation voice assistant built with Python, OpenRouter AI, Whisper STT, and Coqui TTS using Gang of Four design patterns and Behavior-Driven Development (BDD) methodology.
 
+> **🎉 Production Ready!** Switch to the `production` branch for the stable, fully-functional voice assistant with Annmarie Nele's sophisticated voice.
+
 ## 🎉 **Current Status: PRODUCTION READY - All Phases Complete**
 
 ### ✅ **Completed Phases (1-8):**
@@ -273,14 +275,38 @@ Astir/
 - Update README.md with progress
 - Push to GitHub after each milestone
 
+## 🌿 **Branch Strategy**
+
+### **Production Branch** (`production`)
+- **Stable, tested releases** ready for production deployment
+- **Fully functional voice assistant** with Annmarie Nele voice
+- **Clean output modes** (normal, debug, quiet)
+- **All real AI models** (no mocks or fallbacks)
+
+### **Development Branch** (`master`)
+- **Active development** and new features
+- **Experimental changes** and improvements
+- **May contain work-in-progress** features
+
+### **Usage:**
+```bash
+# For production use (stable)
+git checkout production
+python main.py
+
+# For development (latest features)
+git checkout master
+python main.py --debug
+```
+
 ## 🤝 **Contributing**
 
 1. **Fork the repository**
-2. **Create a feature branch** following BDD methodology
+2. **Create a feature branch** from `master` following BDD methodology
 3. **Write Gherkin scenarios** for new features
 4. **Implement tests first** (TDD approach)
 5. **Write minimal code** to pass tests
-6. **Submit a pull request** with comprehensive documentation
+6. **Submit a pull request** to `master` with comprehensive documentation
 
 ## 📄 **License**
 
