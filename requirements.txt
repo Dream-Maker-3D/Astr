@@ -21,11 +21,6 @@ pyyaml>=6.0
 python-dotenv>=1.0.0
 asyncio-mqtt>=0.16.0
 
-# Event system and concurrency
-asyncio>=3.4.3
-threading>=3.4.3
-queue>=3.4.3
-
 # Logging and monitoring
 structlog>=23.1.0
 colorlog>=6.7.0
