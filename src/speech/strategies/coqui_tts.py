@@ -57,55 +57,55 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         self._voice_parameters = VoiceParameters()
         self._model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
         
-        # Available voices with Claribel Dervla as the default young girl voice
+        # Available voices with sultry, sexy options
         self._available_voices = [
             VoiceInfo(
-                voice_id="claribel_dervla",
-                name="Claribel Dervla - Young Happy Girl",
+                voice_id="gracie_wise",
+                name="Gracie Wise - Young Sultry",
                 gender="female",
-                age_group="young",
+                age_group="young_adult",
                 language="en",
-                style="happy_jubilant",
+                style="sultry_seductive",
                 sample_rate=22050,
                 is_cloned=False
             ),
             VoiceInfo(
-                voice_id="daisy_studious",
-                name="Daisy Studious - Bright & Clear",
+                voice_id="alison_dietlinde",
+                name="Alison Dietlinde - Smooth & Alluring",
                 gender="female",
-                age_group="young",
+                age_group="young_adult",
                 language="en",
-                style="studious_bright",
+                style="smooth_alluring",
                 sample_rate=22050,
                 is_cloned=False
             ),
             VoiceInfo(
-                voice_id="tammie_ema",
-                name="Tammie Ema - Energetic",
+                voice_id="annmarie_nele",
+                name="Annmarie Nele - Sophisticated Sexy",
                 gender="female",
-                age_group="young",
+                age_group="young_adult",
                 language="en",
-                style="energetic",
+                style="sophisticated_sexy",
                 sample_rate=22050,
                 is_cloned=False
             ),
             VoiceInfo(
-                voice_id="ana_florence",
-                name="Ana Florence - Cheerful",
+                voice_id="asya_anara",
+                name="Asya Anara - Exotic & Sensual",
                 gender="female",
-                age_group="young",
+                age_group="young_adult",
                 language="en",
-                style="cheerful",
+                style="exotic_sensual",
                 sample_rate=22050,
                 is_cloned=False
             ),
             VoiceInfo(
-                voice_id="tanja_adelina",
-                name="Tanja Adelina - Light & Happy",
+                voice_id="brenda_stern",
+                name="Brenda Stern - Confident & Sexy",
                 gender="female",
-                age_group="young",
+                age_group="young_adult",
                 language="en",
-                style="light_happy",
+                style="confident_sexy",
                 sample_rate=22050,
                 is_cloned=False
             )
@@ -196,15 +196,15 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                 
                 # Map voice IDs to actual Coqui TTS speaker names
                 speaker_mapping = {
-                    "claribel_dervla": "Claribel Dervla",
-                    "daisy_studious": "Daisy Studious", 
-                    "tammie_ema": "Tammie Ema",
-                    "ana_florence": "Ana Florence",
-                    "tanja_adelina": "Tanja Adelina"
+                    "gracie_wise": "Gracie Wise",
+                    "alison_dietlinde": "Alison Dietlinde",
+                    "annmarie_nele": "Annmarie Nele",
+                    "asya_anara": "Asya Anara",
+                    "brenda_stern": "Brenda Stern"
                 }
                 
                 # Get the actual speaker name for Coqui TTS
-                speaker_name = speaker_mapping.get(voice_id, "Claribel Dervla")  # Default to Claribel Dervla
+                speaker_name = speaker_mapping.get(voice_id, "Annmarie Nele")  # Default to Annmarie Nele
                 
                 # Synthesize with Coqui TTS using the mapped speaker
                 audio_array = self._model.tts(
@@ -414,13 +414,13 @@ class CoquiTTSStrategy(ISpeechSynthesis):
         
         # Base frequency varies by voice (higher frequencies for young, happy voices)
         voice_frequencies = {
-            'claribel_dervla': 240,    # Higher pitch for young, happy girl
-            'daisy_studious': 220,     # Bright, clear voice
-            'tammie_ema': 235,         # Energetic, slightly higher
-            'ana_florence': 225,       # Cheerful, pleasant
-            'tanja_adelina': 245       # Light and happy, highest pitch
+            'gracie_wise': 200,        # Lower, sultry tone
+            'alison_dietlinde': 210,   # Smooth, alluring
+            'annmarie_nele': 195,      # Sophisticated, sexy (lowest pitch)
+            'asya_anara': 205,         # Exotic, sensual
+            'brenda_stern': 190        # Confident, mature sexy voice
         }
-        base_freq = voice_frequencies.get(voice_id, 240)  # Default to Claribel Dervla's frequency
+        base_freq = voice_frequencies.get(voice_id, 195)  # Default to Annmarie Nele's frequency
         
         # Apply voice parameters
         freq = base_freq * (1 + self._voice_parameters.pitch * 0.2)
