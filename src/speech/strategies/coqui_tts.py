@@ -216,34 +216,28 @@ class CoquiTTSStrategy(ISpeechSynthesis):
                 )
                 logger.info(f"🎵 TTS returned: type={type(audio_array)}, shape={getattr(audio_array, 'shape', 'no shape')}, size={getattr(audio_array, 'size', 'no size')}")
                 
-                # Convert to bytes (assuming 22050 Hz sample rate)
-                if isinstance(audio_array, np.ndarray) and audio_array.size > 1:
-                    # Convert float32 to int16 PCM
-                    audio_int16 = (audio_array * 32767).astype(np.int16)
-                    audio_data = audio_int16.tobytes()
-                elif isinstance(audio_array, (np.ndarray, np.float32, float)) and np.isscalar(audio_array):
-                    # Handle scalar values - create a small audio buffer
-                    logger.warning(f"Received scalar audio value: {audio_array}, creating minimal audio buffer")
-                    # Create a small silent audio buffer (0.1 seconds at 22050 Hz)
-                    silent_audio = np.zeros(2205, dtype=np.float32)
-                    audio_int16 = (silent_audio * 32767).astype(np.int16)
-                    audio_data = audio_int16.tobytes()
+                # Handle TTS output - can be list or numpy array
+                if isinstance(audio_array, list):
+                    # Convert list to numpy array (this is what TTS returns!)
+                    audio_np = np.array(audio_array, dtype=np.float32)
+                    logger.info(f"Converted list to numpy array: shape={audio_np.shape}, duration={len(audio_np)/22050:.2f}s")
+                elif isinstance(audio_array, np.ndarray):
+                    audio_np = audio_array.astype(np.float32)
+                    logger.info(f"Using numpy array: shape={audio_np.shape}, duration={len(audio_np)/22050:.2f}s")
                 else:
-                    # Fallback for other types
-                    logger.warning(f"Unexpected audio_array type: {type(audio_array)}, value: {audio_array}")
-                    # Create a small silent audio buffer
-                    silent_audio = np.zeros(2205, dtype=np.float32)
-                    audio_int16 = (silent_audio * 32767).astype(np.int16)
-                    audio_data = audio_int16.tobytes()
+                    # Handle scalar or unexpected values
+                    logger.warning(f"Unexpected audio_array type: {type(audio_array)}, creating minimal audio buffer")
+                    audio_np = np.zeros(2205, dtype=np.float32)  # 0.1 seconds
+                
+                # Convert float32 to int16 PCM for PyAudio
+                audio_int16 = (audio_np * 32767).astype(np.int16)
+                audio_data = audio_int16.tobytes()
                 
                 synthesis_time = time.time() - start_time
                 # Use fixed sample rate for XTTS-v2 model (22050 Hz)
                 sample_rate = 22050
-                if isinstance(audio_array, np.ndarray) and audio_array.size > 1:
-                    duration = len(audio_array) / float(sample_rate)
-                else:
-                    # For scalar or invalid values, use a default duration
-                    duration = 0.1  # 0.1 seconds for minimal audio buffer
+                # Calculate duration from the processed audio array
+                duration = len(audio_np) / float(sample_rate)
                 
                 logger.debug(f"Real synthesis complete: {duration:.2f}s audio in {synthesis_time:.2f}s")
                 
