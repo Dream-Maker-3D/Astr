@@ -27,7 +27,7 @@ speech_recognition:
 speech_synthesis:
   model_name: "tts_models/multilingual/multi-dataset/xtts_v2"
   device: "auto"      # auto, cpu, cuda
-  default_voice: "annmarie_nele"  # Young, sultry, sophisticated voice
+  default_voice_id: "annmarie_nele"  # Young, sultry, sophisticated voice
   language: "en"
   sample_rate: 22050
   

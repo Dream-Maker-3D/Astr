@@ -55,8 +55,11 @@ class SpeechConfig:
     synthesis_provider: str = "coqui"
     synthesis_model: str = "tts_models/multilingual/multi-dataset/xtts_v2"
     synthesis_voice: Optional[str] = None
+    default_voice_id: str = "annmarie_nele"
     speaking_rate: float = 1.1
+    default_speaking_rate: float = 1.1
     pitch: float = 0.0
+    default_pitch: float = 0.0
     naturalness: str = "high"
 
 

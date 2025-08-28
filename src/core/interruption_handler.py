@@ -139,6 +139,10 @@ class InterruptionHandler:
         self._successful_recoveries = 0
         self._failed_recoveries = 0
         
+        # AI response tracking
+        self._ai_responding = False
+        self._response_start_time = None
+        
         # Setup event subscriptions
         self._setup_event_subscriptions()
         
@@ -397,6 +401,131 @@ class InterruptionHandler:
             
         except Exception as e:
             logger.error(f"Error forcing interruption: {e}")
+    
+    def _on_partial_transcription(self, event_data: Dict[str, Any]):
+        """Handle partial transcription events for interruption detection."""
+        try:
+            partial_text = event_data.get('partial_text', '')
+            confidence = event_data.get('confidence', 0.0)
+            
+            # Check if this might be an interruption during AI response
+            if (self._conversation_manager.get_current_state() == ConversationState.RESPONDING and
+                confidence > 0.3 and len(partial_text.strip()) > 2):
+                
+                logger.debug(f"Potential interruption detected: '{partial_text[:30]}...'")
+                
+                # Create interruption event
+                interruption = InterruptionEvent(
+                    interruption_type=InterruptionType.USER_SPEECH,
+                    priority=InterruptionPriority.NORMAL,
+                    source_service="stt_partial",
+                    confidence=confidence,
+                    context={'partial_text': partial_text}
+                )
+                
+                # Process the interruption
+                self._process_interruption(interruption)
+                
+        except Exception as e:
+            logger.error(f"Error processing partial transcription: {e}")
+    
+    def _on_ai_response_started(self, event_data: Dict[str, Any]):
+        """Handle AI response started events."""
+        try:
+            logger.debug("AI response started - enabling interruption detection")
+            
+            # Update internal state to track that AI is responding
+            with self._interruption_lock:
+                self._ai_responding = True
+                self._response_start_time = datetime.now()
+            
+            # Publish event for other components
+            self._event_bus.publish("INTERRUPTION_DETECTION_ENABLED", {
+                'timestamp': datetime.now().isoformat(),
+                'reason': 'ai_response_started'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error handling AI response started: {e}")
+    
+    def _on_ai_response_finished(self, event_data: Dict[str, Any]):
+        """Handle AI response finished events."""
+        try:
+            logger.debug("AI response finished - disabling interruption detection")
+            
+            # Update internal state
+            with self._interruption_lock:
+                self._ai_responding = False
+                self._response_start_time = None
+            
+            # Publish event for other components
+            self._event_bus.publish("INTERRUPTION_DETECTION_DISABLED", {
+                'timestamp': datetime.now().isoformat(),
+                'reason': 'ai_response_finished'
+            })
+            
+        except Exception as e:
+            logger.error(f"Error handling AI response finished: {e}")
+    
+    def _on_voice_activity_detected(self, event_data: Dict[str, Any]):
+        """Handle voice activity detection events."""
+        try:
+            confidence = event_data.get('confidence', 0.0)
+            if confidence > 0.5 and self._ai_responding:
+                logger.debug("Voice activity detected during AI response")
+                # This could be an interruption
+                
+        except Exception as e:
+            logger.error(f"Error handling voice activity: {e}")
+    
+    def _on_interruption_detected(self, event_data: Dict[str, Any]):
+        """Handle interruption detection events."""
+        try:
+            logger.debug("Interruption detected event received")
+            # Process the interruption
+            
+        except Exception as e:
+            logger.error(f"Error handling interruption detection: {e}")
+    
+    def _on_final_transcription(self, event_data: Dict[str, Any]):
+        """Handle final transcription events."""
+        try:
+            text = event_data.get('text', '')
+            confidence = event_data.get('confidence', 0.0)
+            
+            if self._ai_responding and confidence > 0.7:
+                logger.info(f"User interruption: '{text[:50]}...'")
+                # Process as interruption
+                
+        except Exception as e:
+            logger.error(f"Error handling final transcription: {e}")
+    
+    def _on_ai_response_chunk(self, event_data: Dict[str, Any]):
+        """Handle AI response chunk events."""
+        try:
+            # Track response progress for interruption timing
+            chunk = event_data.get('chunk', '')
+            logger.debug(f"AI response chunk: {len(chunk)} chars")
+            
+        except Exception as e:
+            logger.error(f"Error handling AI response chunk: {e}")
+    
+    def _on_tts_playback_started(self, event_data: Dict[str, Any]):
+        """Handle TTS playback started events."""
+        try:
+            logger.debug("TTS playback started - monitoring for interruptions")
+            
+        except Exception as e:
+            logger.error(f"Error handling TTS playback started: {e}")
+    
+    def _on_tts_playback_progress(self, event_data: Dict[str, Any]):
+        """Handle TTS playback progress events."""
+        try:
+            progress = event_data.get('progress', 0.0)
+            logger.debug(f"TTS playback progress: {progress:.1%}")
+            
+        except Exception as e:
+            logger.error(f"Error handling TTS playback progress: {e}")
     
     def get_interruption_statistics(self) -> Dict[str, Any]:
         """Get interruption handling statistics."""

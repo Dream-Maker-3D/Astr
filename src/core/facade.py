@@ -180,9 +180,8 @@ class VoiceAssistantFacade:
             # Initialize Service Factory
             self.service_factory = ServiceFactory(self.event_bus)
             
-            # Register core services
-            self.service_factory.register_service('event_bus', lambda: self.event_bus)
-            self.service_factory.register_service('config_manager', lambda: self.config_manager)
+            # Note: Service factory registration will be handled by individual services
+            # Core services are already initialized and available
             
             logger.info("✅ Core services initialized")
             return True
@@ -255,26 +254,29 @@ class VoiceAssistantFacade:
         try:
             logger.info("🎤 Initializing voice pipeline services...")
             
+            # Get configuration objects
+            config_data = self.config_manager.get_config()
+            
             # Initialize Audio Capture Service
-            self.audio_capture = AudioCaptureService(self.event_bus)
+            self.audio_capture = AudioCaptureService(self.event_bus, config_data.audio)
             if not self.audio_capture.initialize():
                 logger.error("Failed to initialize Audio Capture Service")
                 return False
             
             # Initialize Audio Player Service
-            self.audio_player = AudioPlayerService(self.event_bus)
+            self.audio_player = AudioPlayerService(self.event_bus, config_data.audio)
             if not self.audio_player.initialize():
                 logger.error("Failed to initialize Audio Player Service")
                 return False
             
             # Initialize Speech Recognition Service
-            self.speech_recognition = SpeechRecognitionService(self.event_bus)
+            self.speech_recognition = SpeechRecognitionService(self.event_bus, config_data.speech)
             if not self.speech_recognition.initialize():
                 logger.error("Failed to initialize Speech Recognition Service")
                 return False
             
             # Initialize Speech Synthesis Service
-            self.speech_synthesis = SpeechSynthesisService(self.event_bus)
+            self.speech_synthesis = SpeechSynthesisService(self.event_bus, config_data.speech)
             if not self.speech_synthesis.initialize():
                 logger.error("Failed to initialize Speech Synthesis Service")
                 return False
