@@ -155,7 +155,7 @@ class VoiceAssistantFacade:
             
             # Load configuration if file exists
             if Path(self.config_path).exists():
-                config_data = self.config_manager.load_config(self.config_path)
+                config_data = self.config_manager.load_configuration(self.config_path)
                 logger.info(f"Configuration loaded from {self.config_path}")
             else:
                 logger.info("Using default configuration")
