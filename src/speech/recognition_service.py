@@ -357,7 +357,19 @@ class SpeechRecognitionService:
     def _handle_speech_end(self, event_data: Dict[str, Any]) -> None:
         """Handle speech detection end event."""
         self._is_processing = False
-        self._logger.debug("Speech ended - stopping transcription processing")
+        self._logger.debug("Speech ended - processing audio for transcription")
+        
+        # Extract audio data from the event
+        audio_data = event_data.get('audio_data')
+        if audio_data:
+            self._logger.info(f"Processing speech audio: {audio_data.duration:.2f}s, {len(audio_data.data)} samples")
+            # Queue the audio for transcription
+            try:
+                self._processing_queue.put(audio_data, timeout=1.0)
+            except Exception as e:
+                self._logger.error(f"Failed to queue audio for transcription: {e}")
+        else:
+            self._logger.warning("SPEECH_ENDED event received but no audio_data found")
     
     def _start_worker_thread(self) -> None:
         """Start the worker thread for processing audio queue."""

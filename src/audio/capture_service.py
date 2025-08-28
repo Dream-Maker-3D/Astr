@@ -91,6 +91,10 @@ class VoiceActivityDetector:
         # Detect speech if RMS exceeds threshold
         is_speech = avg_rms > self.threshold
         
+        # Debug logging for speech detection
+        if avg_rms > 0.010:  # Log when there's some audio activity
+            self._logger.debug(f"Audio activity: RMS={avg_rms:.4f}, threshold={self.threshold:.4f}, speech={is_speech}")
+        
         return is_speech, rms
     
     def update_threshold(self, new_threshold: float) -> None:
@@ -132,7 +136,7 @@ class AudioCaptureService:
         
         # Voice Activity Detection
         self._vad = VoiceActivityDetector(
-            threshold=0.015,  # Will be updated from config
+            threshold=0.020,  # Balanced threshold for speech detection
             window_size=config.input_chunk_size
         )
         
@@ -145,7 +149,7 @@ class AudioCaptureService:
         self._is_speech_active = False
         self._speech_start_time: Optional[float] = None
         self._silence_counter = 0
-        self._silence_threshold = 30  # Frames of silence before speech ends
+        self._silence_threshold = 10  # Frames of silence before speech ends (reduced for faster speech ending)
         
         # Statistics
         self._stats = {
@@ -537,13 +541,25 @@ class AudioCaptureService:
             
             self._logger.debug(f"Speech ended - captured {len(speech_chunks)} chunks, {speech_duration:.2f}s")
             
-            # Publish speech ended event
+            # Create AudioData object for the complete speech
+            speech_audio = AudioData(
+                data=combined_audio,
+                sample_rate=self._config.input_sample_rate,
+                channels=1,
+                timestamp=self._speech_start_time,
+                duration=speech_duration,
+                is_speech=True,
+                rms_level=np.sqrt(np.mean(combined_audio ** 2)) if len(combined_audio) > 0 else 0.0
+            )
+            
+            # Publish speech ended event with audio data
             self._event_bus.publish(EventTypes.SPEECH_ENDED, {
                 'timestamp': time.time(),
                 'duration_seconds': speech_duration,
                 'chunk_count': len(speech_chunks),
                 'audio_length': len(combined_audio),
-                'sample_rate': self._config.input_sample_rate
+                'sample_rate': self._config.input_sample_rate,
+                'audio_data': speech_audio  # Include the actual audio data
             })
         
         self._speech_start_time = None

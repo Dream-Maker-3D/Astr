@@ -233,7 +233,7 @@ class AIConversationService:
     def _subscribe_to_events(self) -> None:
         """Subscribe to relevant Event Bus events."""
         # Subscribe to transcription events from STT service
-        self.event_bus.subscribe("TRANSCRIPTION_READY", self._handle_transcription_event)
+        self.event_bus.subscribe("TRANSCRIPTION_COMPLETED", self._handle_transcription_event)
         
         # Subscribe to interruption events
         self.event_bus.subscribe("AI_INTERRUPTION", self._handle_interruption_event)

@@ -656,7 +656,7 @@ Avoid verbose explanations unless specifically asked. Be ready to be interrupted
         logger.debug("Conversation state: LISTENING - Ready for user input")
         
         # Ensure audio capture is active
-        if self.audio_capture and not self.audio_capture.is_capturing:
+        if self.audio_capture and not self.audio_capture._is_capturing:
             try:
                 self.audio_capture.start_capture()
             except Exception as e:
