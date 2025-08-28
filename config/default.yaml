@@ -16,12 +16,27 @@ audio:
     channels: 1
     volume: 0.8
 
-# Speech Recognition (Whisper STT)
+# Speech Recognition (Enhanced Faster-Whisper STT)
 speech_recognition:
-  model_name: "base"  # Whisper model: tiny, base, small, medium, large
-  device: "auto"      # auto, cpu, cuda
-  language: "en"      # Auto-detect if null
-  temperature: 0.0
+  strategy: "faster_whisper"  # Use enhanced faster-whisper strategy
+  model_size: "small"         # Upgrade to small for better accuracy (was base)
+  device: "cpu"               # cpu, cuda
+  compute_type: "int8"        # int8, int16, float16, float32 (int8 for speed)
+  recognition_language: "en"  # Language code or "auto" for detection
+  
+  # Enhanced accuracy settings
+  confidence_threshold: 0.6   # Lower threshold for better sensitivity
+  beam_size: 5               # Beam search for better accuracy
+  best_of: 5                 # Multiple candidates for best results
+  
+  # Audio preprocessing
+  enable_vad: true           # Voice Activity Detection
+  vad_threshold: 0.5         # VAD sensitivity
+  enable_noise_reduction: true # Basic noise reduction
+  
+  # Performance settings
+  enable_streaming: true     # Enable streaming transcription
+  max_segment_length: 30     # Maximum segment length in seconds
   
 # Speech Synthesis (Coqui TTS)
 speech_synthesis:
@@ -38,13 +53,25 @@ speech_synthesis:
     volume: 0.8          # Smooth, intimate volume
     energy: 0.8          # Controlled energy for sophisticated delivery
 
-# AI Conversation (OpenRouter)
+# AI Conversation (OpenRouter) - Optimized for Speed
 ai:
   provider: "openrouter"
   model: "anthropic/claude-3.5-sonnet"
   api_key: "${OPENROUTER_API_KEY}"
-  max_tokens: 150
+  max_tokens: 100                # Reduced for faster responses
   temperature: 0.7
+  
+  # Performance optimizations
+  enable_streaming: true         # Enable streaming for faster first token
+  timeout_seconds: 15           # Reduced timeout for faster failures
+  
+  # Smart model selection (future enhancement)
+  fast_model: "anthropic/claude-3-haiku"  # Faster model for simple queries
+  quality_model: "anthropic/claude-3.5-sonnet"  # High-quality model for complex queries
+  
+  # Context optimization
+  max_context_turns: 8          # Reduced context for faster processing
+  smart_context_truncation: true # Intelligent context management
   
   # Personality configuration for young, sultry assistant
   personality:

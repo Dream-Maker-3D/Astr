@@ -46,10 +46,22 @@ class SpeechConfig:
     """Speech recognition and synthesis configuration."""
     # Recognition settings
     recognition_provider: str = "whisper"
+    strategy: str = "whisper"  # STT strategy: whisper, faster_whisper
     recognition_model: str = "base"
+    model_size: str = "base"  # Whisper model size
     recognition_language: str = "en"
     confidence_threshold: float = 0.6
     continuous_mode: bool = True
+    
+    # Enhanced STT settings (faster-whisper)
+    compute_type: str = "int8"  # int8, int16, float16, float32
+    beam_size: int = 5
+    best_of: int = 5
+    enable_vad: bool = True
+    vad_threshold: float = 0.5
+    enable_noise_reduction: bool = True
+    enable_streaming: bool = True
+    max_segment_length: int = 30
     
     # Synthesis settings
     synthesis_provider: str = "coqui"
@@ -84,8 +96,16 @@ class AIConfig:
     max_tokens: int = 150
     temperature: float = 0.8
     timeout: int = 20
+    timeout_seconds: int = 20  # Alternative naming
     conversation_mode: bool = True
     system_prompt: str = field(default_factory=lambda: """You are having a natural spoken conversation. Be concise and conversational. Respond like a knowledgeable person, not an AI assistant. Use natural speech patterns, contractions, and keep responses brief unless asked for details. Handle interruptions and corrections gracefully without acknowledging them explicitly.""")
+    
+    # Performance optimizations
+    enable_streaming: bool = True
+    fast_model: str = "anthropic/claude-3-haiku"
+    quality_model: str = "anthropic/claude-3.5-sonnet"
+    max_context_turns: int = 8
+    smart_context_truncation: bool = True
 
 
 @dataclass

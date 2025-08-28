@@ -328,8 +328,9 @@ class AIConversationService:
             # Get context messages
             context_messages = self.conversation_manager.get_context_messages()
             
-            # Generate AI response
-            raw_response = self.openrouter_client.generate_response(context_messages, stream=False)
+            # Generate AI response with streaming for faster first token
+            enable_streaming = getattr(self.config, 'enable_streaming', True)
+            raw_response = self.openrouter_client.generate_response(context_messages, stream=enable_streaming)
             
             # Apply conversational intelligence optimization
             conversation_context = {

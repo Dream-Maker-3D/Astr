@@ -330,11 +330,17 @@ class SpeechRecognitionService:
     def _load_stt_strategy(self) -> None:
         """Load the configured STT strategy."""
         # Import here to avoid circular imports
-        from .strategies.whisper_stt import WhisperSTTStrategy
+        strategy_name = getattr(self._config, 'strategy', 'whisper')
         
-        # For now, default to Whisper strategy
-        # In the future, this could be configurable
-        strategy = WhisperSTTStrategy(self._config)
+        if strategy_name == 'faster_whisper':
+            self._logger.info("Loading Enhanced Faster-Whisper STT Strategy")
+            from .strategies.faster_whisper_stt import FasterWhisperSTTStrategy
+            strategy = FasterWhisperSTTStrategy(self._config)
+        else:
+            self._logger.info("Loading Standard Whisper STT Strategy")
+            from .strategies.whisper_stt import WhisperSTTStrategy
+            strategy = WhisperSTTStrategy(self._config)
+        
         self.set_strategy(strategy)
     
     def _subscribe_to_events(self) -> None:
