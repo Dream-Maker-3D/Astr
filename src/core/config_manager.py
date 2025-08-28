@@ -54,13 +54,25 @@ class SpeechConfig:
     # Synthesis settings
     synthesis_provider: str = "coqui"
     synthesis_model: str = "tts_models/multilingual/multi-dataset/xtts_v2"
+    model_name: str = "tts_models/multilingual/multi-dataset/xtts_v2"
+    device: str = "auto"
     synthesis_voice: Optional[str] = None
     default_voice_id: str = "annmarie_nele"
+    sample_rate: int = 22050
     speaking_rate: float = 1.1
     default_speaking_rate: float = 1.1
     pitch: float = 0.0
     default_pitch: float = 0.0
+    default_volume: float = 0.8
     naturalness: str = "high"
+    default_naturalness: str = "high"
+    
+    def validate(self) -> bool:
+        """Validate speech configuration parameters."""
+        return (self.sample_rate > 0 and
+                0.5 <= self.speaking_rate <= 2.0 and
+                -1.0 <= self.pitch <= 1.0 and
+                0.0 <= self.default_volume <= 1.0)
 
 
 @dataclass
